@@ -10,7 +10,6 @@ async function initialize() {
           poolMax: 4,
           poolIncrement: 0
         });
-        console.log('Successful connection');
       }
       catch (error) {
         console.error('Connection failed: ', error);
