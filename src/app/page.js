@@ -1,37 +1,69 @@
-import { Card } from 'antd';
+import { Card, Row, Col } from 'antd';
+import { DollarOutlined, SmileOutlined, LineChartOutlined, BankOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 
-export default function Home() {
+const ClickableCards = () => {
+  const data = [
+    {
+      title: 'Income Data',
+      icon: <DollarOutlined style={{ fontSize: '48px' }} />,
+      link: '/income-data'
+    },
+    {
+      title: 'Dependent Care',
+      icon: <SmileOutlined style={{ fontSize: '48px' }} />,
+      link: '/dependent-care'
+    },
+    {
+      title: 'Inflation',
+      icon: <LineChartOutlined style={{ fontSize: '48px' }} />,
+      link: '/inflation'
+    },
+    {
+      title: 'Monetary Policy',
+      icon: <BankOutlined style={{ fontSize: '48px' }} />,
+      link: '/monetary-policy'
+    },
+    {
+      title: 'Energy',
+      icon: <ThunderboltOutlined style={{ fontSize: '48px' }} />,
+      link: '/energy'
+    },
+  ];
+
+  return (
+    <div className="m-10">
+    <Row gutter={[16, 16]} justify="center" align="middle">
+      {data.map((item, index) => (
+        <Col span={4} key={index}>
+          <Link href={item.link} passHref>
+          <Card
+            hoverable
+            bordered={true}
+            cover={item.icon}
+            style={{ textAlign: 'center'}}
+            title={<span style={{ fontSize: '12px' }}>{item.title}</span>}
+          >
+          </Card>
+          </Link>
+        </Col>
+      ))}
+    </Row>
+    </div>
+  );
+};
+
+export default function HomePage() {
   return (
       <div className="items-center justify-center min-h-screen text-center">
         <div className="mt-10 mb-1">
-          <h1 className="text-2xl">Trend Analysis of Income Tax Data</h1>
+          <h1 className="text-4xl font-bold font-roboto">Dollartrend</h1>
         </div>
         <div>
-          <p>Impact of Macroeconomic Indicators and Economic Cycles</p>
+          <p>Learn about your money and economic trends from</p>
         </div>
-      <div className="flex p-16">
-        <div className="m-5">
-          <Card title="Purpose" bordered={true}>
-          <p>Our project aims to explore the relationship between 
-            individual income and broader economic trends. This involves analyzing tax 
-            data collected over time, allowing for in-depth queries on how income is both 
-            affected by and influences macroeconomic events and indicators.
-          </p>
-          </Card>
-        </div>
-        <div className="m-5">
-          <Card title="Data details" bordered={true}>
-          <p>We chose to use IRS income tax data ranging between the years 2009 - 2021 as our 
-            primary source of data as Income distribution and its variation over time 
-            across different geographic regions and demographic groups would likely provide 
-            interesting insights into the economy over a period of twenty four years. The 
-            data also allows us to examine the effects of economic events, policies and programs 
-            and shifts in income across different sectors over time. Moreover, the dataset also 
-            encompasses records in the degree of magnitude that the project requirements specify. 
-          </p>
-          </Card>
-        </div>
-      </div>
+        <div>Analysis of Income Data</div>
+        <div><ClickableCards /></div>
       </div>
   );
 }
