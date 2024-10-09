@@ -40,10 +40,12 @@ const ClickableCards = () => {
           <Card
             hoverable
             bordered={true}
-            cover={item.icon}
             style={{ textAlign: 'center'}}
             title={<span style={{ fontSize: '12px' }}>{item.title}</span>}
           >
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '55px' }}>
+              {item.icon}
+            </div>
           </Card>
           </Link>
         </Col>
@@ -57,12 +59,12 @@ export default function HomePage() {
   return (
       <div className="items-center justify-center min-h-screen text-center">
         <div className="mt-10 mb-1">
-          <h1 className="text-4xl font-bold font-roboto">Dollartrend</h1>
+          <h1 className="text-4xl font-bold mb-8">Dollartrend</h1>
         </div>
-        <div>
-          <p>Learn about your money and economic trends from</p>
+        <div className="font-thin mb-16">
+          <p>Learn about your money and economic trends from analysis of income data</p>
         </div>
-        <div>Analysis of Income Data</div>
+        <div></div>
         <div><ClickableCards /></div>
       </div>
   );
