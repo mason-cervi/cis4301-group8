@@ -26,3 +26,11 @@ body {
     text-wrap: balance;
   }
 }
+
+.custom-slider .ant-slider-track {
+  background-color: #ffffff !important;
+}
+
+.custom-slider .ant-slider-rail {
+  background-color: #a1a1a1 !important;
+}

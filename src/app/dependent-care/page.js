@@ -1,4 +1,4 @@
-import StateMap from '../components/StateMap';
+import Dashboard from "../components/Dashboards";
 
 export default function DependentCarePage() {
     return (
@@ -6,8 +6,8 @@ export default function DependentCarePage() {
             <div className="items-center justify-center text-center mt-10">
             Dependent Care Page
             </div>
-            <div className="flex items-center justify-center ml-48 mr-48 mb-20">
-            <StateMap />
+            <div>
+            <Dashboard />
             </div>
         </div>
     );
