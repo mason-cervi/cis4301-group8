@@ -1,4 +1,4 @@
-import Dashboard from "../components/Dashboards";
+import Dashboard from "../components/Dashboard";
 
 export default function InflationPage() {
     return (
