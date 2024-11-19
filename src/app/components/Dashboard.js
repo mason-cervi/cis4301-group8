@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Button, Slider, Select } from 'antd';
 import DataTable from './DataTable';
+import LineChart from './LineChart';
+import StateMap from './StateMap';
 
 const states = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -18,6 +20,7 @@ const Dashboard = () => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [chartData, setchartData] = useState([]);
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -40,6 +43,12 @@ const Dashboard = () => {
       
       const jsonData = await response.json();
       setData(jsonData);
+
+      setchartData(jsonData.map(row => ({
+        year: row.Year,
+        value: row["Total Amount of Care Credits"],
+        category: row.State,
+      })))
       console.log(data[0]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -54,17 +63,25 @@ const Dashboard = () => {
         <div className="mb-16">
         <div className="text-center mt-8 mb-8 font-light text-sm">
                 Selected states to analyze:
-            </div>
-        <Select
-          mode='multiple'
-          defaultValue={US_state}
-          onChange={handleUS_StateChange}
-          style={{ width: 120 }}
-          options={states.map(state => ({ 
-            value: state, 
-            label: state 
-          }))}
-        />
+        </div>
+        <div className="grid grid-cols-2 items-center">
+          <div className="col-span-1 justify-center w-full flex pt-4">
+          <Select
+            mode='multiple'
+            maxTagCount={10}
+            defaultValue={US_state}
+            onChange={handleUS_StateChange}
+            style={{ width: 120 }}
+            options={states.map(state => ({ 
+              value: state, 
+              label: state 
+            }))}
+          />
+          </div>
+          <div className="col-span-1 flex justify-center mr-10 ml-10">
+          <StateMap selectedStates={US_state} />
+          </div>
+        </div>
         </div>
         <div className="mr-48 ml-48 mb-16">
             <Slider
@@ -89,7 +106,10 @@ const Dashboard = () => {
           {isLoading ? 'Loading...' : 'Fetch Data'}
         </Button>
       </div>
-      <div>
+      <div className="mb-16 m-20">
+      {data.length !== 0 && <LineChart data={chartData} />}
+      </div>
+      <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
       </div>
 

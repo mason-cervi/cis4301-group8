@@ -1,45 +1,88 @@
 "use client";
 
-import React, { useState } from 'react';
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import { Checkbox, Divider } from 'antd';
-
+import React from 'react';
+import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-export default function StateMap() {
-    return (
-    <div className="flex items-center justify-center ml-48 mr-48 mb-20">
-      <ComposableMap projection="geoAlbersUsa">
-        <Geographies geography={geoUrl}>
-          {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography 
-                key={geo.rsmKey} 
+const STATES = {
+  'Alabama': 'AL',
+  'Alaska': 'AK',
+  'Arizona': 'AZ',
+  'Arkansas': 'AR',
+  'California': 'CA',
+  'Colorado': 'CO',
+  'Connecticut': 'CT',
+  'Delaware': 'DE',
+  'Florida': 'FL',
+  'Georgia': 'GA',
+  'Hawaii': 'HI',
+  'Idaho': 'ID',
+  'Illinois': 'IL',
+  'Indiana': 'IN',
+  'Iowa': 'IA',
+  'Kansas': 'KS',
+  'Kentucky': 'KY',
+  'Louisiana': 'LA',
+  'Maine': 'ME',
+  'Maryland': 'MD',
+  'Massachusetts': 'MA',
+  'Michigan': 'MI',
+  'Minnesota': 'MN',
+  'Mississippi': 'MS',
+  'Missouri': 'MO',
+  'Montana': 'MT',
+  'Nebraska': 'NE',
+  'Nevada': 'NV',
+  'New Hampshire': 'NH',
+  'New Jersey': 'NJ',
+  'New Mexico': 'NM',
+  'New York': 'NY',
+  'North Carolina': 'NC',
+  'North Dakota': 'ND',
+  'Ohio': 'OH',
+  'Oklahoma': 'OK',
+  'Oregon': 'OR',
+  'Pennsylvania': 'PA',
+  'Rhode Island': 'RI',
+  'South Carolina': 'SC',
+  'South Dakota': 'SD',
+  'Tennessee': 'TN',
+  'Texas': 'TX',
+  'Utah': 'UT',
+  'Vermont': 'VT',
+  'Virginia': 'VA',
+  'Washington': 'WA',
+  'West Virginia': 'WV',
+  'Wisconsin': 'WI',
+  'Wyoming': 'WY'
+ };
+
+const StateMap = ({ selectedStates }) => {
+  return (
+    <ComposableMap projection="geoAlbersUsa">
+      <Geographies geography={geoUrl}>
+        {({ geographies }) => 
+          geographies.map(geo => {
+            const stateAbbr = STATES[geo.properties.name];
+
+            return (
+              <Geography
+                key={geo.rsmKey}
                 geography={geo}
+                fill={selectedStates.includes(stateAbbr) ? "#F53" : "#D6D6DA"}
+                stroke="#FFF"
                 style={{
-                    default: {
-                      fill: "#E9E3DA",
-                      stroke: "#AAAAAA",
-                      strokeWidth: 0.75,
-                      outline: "none",
-                    },
-                    hover: {
-                      fill: "#CFD8DC",
-                      stroke: "#455A64",
-                      strokeWidth: 1,
-                    },
-                    pressed: {
-                      fill: "#bbbbbb",
-                      stroke: "#37474F",
-                      strokeWidth: 1.25,
-                    },
-                  }}
+                  default: { outline: 'none' },
+                  
+                }}
               />
-            ))
-          }
-        </Geographies>
-      </ComposableMap>
-      </div>
-    )
-  }
+            );
+          })
+        }
+      </Geographies>
+    </ComposableMap>
+  );
+};
+
+export default StateMap;
