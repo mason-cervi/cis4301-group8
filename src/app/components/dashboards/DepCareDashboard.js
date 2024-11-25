@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Button, Slider, Select } from 'antd';
-import DataTable from './DataTable';
-import LineChart from './LineChart';
-import StateMap from './StateMap';
+import DataTable from '../DataTable';
+import LineChart from '../LineChart';
+import StateMap from '../StateMap';
 
 const states = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -106,6 +106,9 @@ const Dashboard = () => {
         >
           {isLoading ? 'Loading...' : 'Fetch Data'}
         </Button>
+      </div>
+      <div className="mb-8 font-light">
+      {data.length !== 0 && <>Total Number of Care Credits by State</>}
       </div>
       <div className="mb-16 m-20">
       {data.length !== 0 && <LineChart data={chartData} />}

@@ -43,16 +43,16 @@ export async function GET(request) {
         State as "State",
         ZipCode as "ZIP Code",
         EXTRACT(YEAR FROM DateOf) AS "Year", -- Extract year using EXTRACT
-        SUM(EnergyTaxCreditAmount) AS TotalEnergyCreditsAmount, 
-        SUM(NumOfEnergyTaxCredits) AS TotalNumOfEnergyCredits,
+        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits Amount", 
+        SUM(NumOfEnergyTaxCredits) AS "Total Number Of Energy Credits",
         CASE
-            WHEN COUNT(*) > 0 THEN SUM(NumOfEnergyTaxCredits) * 1.0 / COUNT(*)
+            WHEN COUNT(*) > 0 THEN ROUND((SUM(NumOfEnergyTaxCredits) * 1.0 / COUNT(*)), 3)
             ELSE 0
-        END AS UptakeRate, -- Percentage of returns with energy tax credits
+        END AS "Uptake Rate", -- Percentage of returns with energy tax credits
         CASE
-            WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits)
+            WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND((SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits)),3)
             ELSE 0
-        END AS AvgEnergyCreditAmount -- Average credit amount per claim
+        END AS "Average Energy Credit Amount" -- Average credit amount per claim
       FROM 
         "SAM.GROSSER".SOI_TAXSTATS
         WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 

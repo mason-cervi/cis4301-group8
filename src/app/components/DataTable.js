@@ -31,6 +31,7 @@ const DataTable = ({jsonData}) => {
       <Table 
         columns={columns} 
         dataSource={data}
+        rowClassName={(record, index) => (index % 2 === 0 ? 'even-row' : 'odd-row')}
         pagination={{ showSizeChanger: true }}
       />
       </div>

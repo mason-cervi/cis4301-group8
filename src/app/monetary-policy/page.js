@@ -1,4 +1,4 @@
-import Dashboard from "../components/Dashboard";
+import Dashboard from "../components/dashboards/DepCareDashboard";
 
 export default function MonetaryPolicyPage() {
     return (
