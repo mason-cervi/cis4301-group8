@@ -36,7 +36,7 @@ const Dashboard = () => {
     const statesQuery = US_state.join(",");
     
     try {
-      const response = await fetch(`/api/tax_stats?startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+      const response = await fetch(`/api/tax_stats?queryId=1&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -60,12 +60,10 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-4 items-center justify-center text-center mt-10">
-        <div className="mb-16">
-        <div className="text-center mt-8 mb-8 font-light text-sm">
-                Selected states to analyze:
-        </div>
-        <div className="grid grid-cols-2 items-center">
-          <div className="col-span-1 justify-center w-full flex pt-4">
+        <div className="mb-8">
+        <div className="grid grid-cols-5 items-center">
+          <div className="col-span-2 flex flex-col items-center w-full pt-4">
+          <span className="text-center font-light mb-8">Select states to display:</span>
           <Select
             mode='multiple'
             maxTagCount={10}
@@ -78,10 +76,13 @@ const Dashboard = () => {
             }))}
           />
           </div>
-          <div className="col-span-1 flex justify-center mr-10 ml-10">
+          <div className="col-span-3 flex justify-center mr-10 ml-10">
           <StateMap selectedStates={US_state} />
           </div>
         </div>
+        </div>
+        <div className="font-light text-left ml-48 pb-6">
+          Select a range of years from 2009 to 2021:
         </div>
         <div className="mr-48 ml-48 mb-16">
             <Slider
@@ -101,7 +102,7 @@ const Dashboard = () => {
         <Button 
           onClick={fetchData}
           disabled={isLoading}
-          className="w-full md:w-auto"
+          className="w-full md:w-auto mb-32"
         >
           {isLoading ? 'Loading...' : 'Fetch Data'}
         </Button>

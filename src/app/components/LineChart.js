@@ -7,7 +7,6 @@ const LineChart = ({ data }) => {
     xField: 'year',
     yField: 'value',
     seriesField: 'category',
-    height: 400,
   };
   
   return <Line {...config} />;

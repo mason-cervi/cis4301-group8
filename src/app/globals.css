@@ -10,7 +10,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
+    --foreground-rgb: 0, 0, 0;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
@@ -18,7 +18,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(35, 35, 35);
+  background: rgb(240, 240, 240);
 }
 
 @layer utilities {
@@ -28,9 +28,10 @@ body {
 }
 
 .custom-slider .ant-slider-track {
-  background-color: #ffffff !important;
+  background-color: #3d81f7 !important;
 }
 
 .custom-slider .ant-slider-rail {
-  background-color: #a1a1a1 !important;
+  background-color: #d6d6da !important;
 }
+

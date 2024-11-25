@@ -61,7 +61,7 @@ export default function HomePage() {
         <div className="mt-10 mb-1">
           <h1 className="text-4xl font-bold mb-8">Dollartrend</h1>
         </div>
-        <div className="font-thin mb-16">
+        <div className="font-light mb-16">
           <p>Learn about your money and economic trends from analysis of income data</p>
         </div>
         <div></div>

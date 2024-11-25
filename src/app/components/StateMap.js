@@ -70,7 +70,7 @@ const StateMap = ({ selectedStates }) => {
               <Geography
                 key={geo.rsmKey}
                 geography={geo}
-                fill={selectedStates.includes(stateAbbr) ? "#F53" : "#D6D6DA"}
+                fill={selectedStates.includes(stateAbbr) ? "#3D81F7" : "#D6D6DA"}
                 stroke="#FFF"
                 style={{
                   default: { outline: 'none' },
