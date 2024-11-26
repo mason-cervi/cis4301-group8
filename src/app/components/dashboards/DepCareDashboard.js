@@ -45,6 +45,11 @@ const Dashboard = () => {
     setIsLoading(true);
     setError(null);
     const statesQuery = US_state.join(",");
+
+    if (US_state.length === 0) {
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const response = await fetch(`/api/tax_stats?queryId=1&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
