@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
+  const [chartSelection, setChartSelection] = useState("Total Amount of Care Credits");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -28,6 +29,16 @@ const Dashboard = () => {
 
   const handleSliderChange = (value) => {
     setRange(value);
+}
+
+  const handlechartSelectionChange = (value) => {
+    setChartSelection(value);
+
+    setchartData(data.map(row => ({
+      year: row.Year,
+      value: row[value],
+      category: row.State,
+    })))
 }
 
   const fetchData = async () => {
@@ -46,7 +57,7 @@ const Dashboard = () => {
 
       setchartData(jsonData.map(row => ({
         year: row.Year,
-        value: row["Total Amount of Care Credits"],
+        value: row[chartSelection],
         category: row.State,
       })))
       console.log(data[0]);
@@ -107,8 +118,24 @@ const Dashboard = () => {
           {isLoading ? 'Loading...' : 'Fetch Data'}
         </Button>
       </div>
-      <div className="mb-8 font-light">
-      {data.length !== 0 && <>Total Number of Care Credits by State</>}
+      <div className="mb-8 font-light flex items-center justify-between">
+        <div className="flex-1 text-center">
+          {data.length !== 0 && <>{chartSelection} by State</>}
+        </div>
+
+        <div className="flex-none mr-28">
+          {data.length !== 0 && <Select
+            maxTagCount={10}
+            defaultValue={chartSelection}
+            onChange={handlechartSelectionChange}
+            style={{ width: 300 }}
+            options= {[
+              { value: 'Total Amount of Care Credits', label: 'Total Amount of Care Credits' },
+              { value: 'Total Number of Care Credits', label: 'Total Number of Care Credits' },
+              { value: 'Average Care Credits Per Dependent', label: 'Average Care Credits Per Dependent' },
+            ]}
+          />}
+        </div>
       </div>
       <div className="mb-16 m-20">
       {data.length !== 0 && <LineChart data={chartData} />}

@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
+  const [chartSelection, setChartSelection] = useState("Uptake Rate");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -28,6 +29,16 @@ const Dashboard = () => {
 
   const handleSliderChange = (value) => {
     setRange(value);
+}
+
+const handlechartSelectionChange = (value) => {
+    setChartSelection(value);
+
+    setchartData(data.map(row => ({
+      year: row.Year,
+      value: row[value],
+      category: row.State,
+    })))
 }
 
   const fetchData = async () => {
@@ -107,8 +118,25 @@ const Dashboard = () => {
           {isLoading ? 'Loading...' : 'Fetch Data'}
         </Button>
       </div>
-      <div className="mb-8 font-light">
-      {data.length !== 0 && <>Uptake Rate by State</>}
+      <div className="mb-8 font-light flex items-center justify-between">
+        <div className="flex-1 text-center">
+          {data.length !== 0 && <>{chartSelection} by State</>}
+        </div>
+
+        <div className="flex-none mr-28">
+          {data.length !== 0 && <Select
+            maxTagCount={10}
+            defaultValue={chartSelection}
+            onChange={handlechartSelectionChange}
+            style={{ width: 300 }}
+            options= {[
+              { value: 'Uptake Rate', label: 'Uptake Rate' },
+              { value: 'Total Energy Credits Amount', label: 'Total Energy Credits Amount' },
+              { value: 'Total Number Of Energy Credits', label: 'Total Number Of Energy Credits' },
+              { value: 'Average Energy Credit Amount', label: 'Average Energy Credit Amount' },
+            ]}
+          />}
+        </div>
       </div>
       <div className="mb-16 m-20">
       {data.length !== 0 && <LineChart data={chartData} />}
