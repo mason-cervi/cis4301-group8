@@ -1,4 +1,4 @@
-import Dashboard from "../components/dashboards/DepCareDashboard";
+import Dashboard from "../components/dashboards/IncomeDataDashboard";
 
 export default function IncomeDataPage() {
     return (

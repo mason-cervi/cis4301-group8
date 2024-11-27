@@ -1,4 +1,4 @@
-import Dashboard from "../components/dashboards/DepCareDashboard";
+import Dashboard from "../components/dashboards/InflationDashboard";
 
 export default function InflationPage() {
     return (
