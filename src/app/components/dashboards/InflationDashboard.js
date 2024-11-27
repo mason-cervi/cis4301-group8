@@ -135,9 +135,9 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-              { value: 'Total Amount of Care Credits', label: 'Total Amount of Care Credits' },
-              { value: 'Total Number of Care Credits', label: 'Total Number of Care Credits' },
-              { value: 'Average Care Credits Per Dependent', label: 'Average Care Credits Per Dependent' },
+                { value: 'Average Nominal income', label: 'Average Nominal income' },
+                { value: 'Average Real Income', label: 'Average Real Income' },
+                { value: 'Average Consumer Price Index', label: 'Average Consumer Price Index ' },
             ]}
           />}
         </div>
