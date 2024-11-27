@@ -15,7 +15,7 @@ export async function GET(request) {
     const pool = await initialize();
     const connection = await pool.getConnection();
 
-    if (queryID == 1) {
+    if (queryID == 1) { // Query 2: Geo location of claimant affect dependent care claim amount over time 
         query = `
         SELECT
         State AS "State",
@@ -36,8 +36,7 @@ export async function GET(request) {
         State, DateOf
         `;
     }
-    
-    else if (queryID == 2) {
+    else if (queryID == 2) { // Query 1: geo location of the claimant affect uptake rate and claim amount of residential energy over time
         query = `
         SELECT 
         State as "State",
@@ -61,6 +60,71 @@ export async function GET(request) {
         State, ZipCode, EXTRACT(YEAR FROM DateOf) -- Use EXTRACT in GROUP BY
       ORDER BY 
         State, "Year", ZipCode
+        `;
+    }
+    else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
+        query = `
+        SELECT
+        EXTRACT(YEAR FROM t.DateOf) AS "Year",
+        t.State AS "State",
+        t.AGI_stub AS "Income Bracket",
+        AVG(t.AGI_stub) AS "Average Nominal Income",
+        AVG(t.AGI_stub) / (AVG(c.CPIAUCSL) / 100) AS "Real Income",
+        AVG(c.CPIAUCSL) AS "Average CPI"
+        FROM
+          "SAM.GROSSER".SOI_TAXSTATS t
+        JOIN
+          "SAM.GROSSER".ConsumerPriceIndex c
+          ON EXTRACT(YEAR FROM t.DateOf) = EXTRACT(YEAR FROM c.DateOf)
+        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        GROUP BY
+          EXTRACT(YEAR FROM t.DateOf), t.State, t.AGI_stub
+        ORDER BY
+          "Year", t.State, "Income Bracket"
+        `;
+    }
+    else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
+        query = `
+        SELECT
+        EXTRACT(YEAR FROM DateOf) AS "Year",
+        State,
+        AGI_stub AS "Income Bracket",
+        AVG(FedFunds) AS "Average Fed Funds Rate",
+        COUNT(*) AS "Total Returns",
+        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits",
+        SUM(CareCreditsAmount) AS "Total Care Credits",
+          CASE
+            WHEN COUNT(*) > 0 THEN SUM(EnergyTaxCreditAmount) * 1.0 / COUNT(*)
+            ELSE 0
+          END AS "Average Energy Credits Per Return"
+        FROM 
+          "SAM.GROSSER".FederalFunds, "SAM.GROSSER".SOI_TAXSTATS
+        WHERE DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        GROUP BY
+          EXTRACT(YEAR FROM DateOf), State, AGI_stub
+        ORDER BY
+          "Year", State, "Income Bracket"
+         `;
+    }
+    else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
+        query = `
+        SELECT
+        State,
+        EXTRACT(YEAR FROM DateOf) AS "Year",
+        AGI_stub AS "Income Bracket",
+        COUNT(*) AS "Total Returns",
+        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits",
+        SUM(CareCreditsAmount) AS "Total Care Credits"
+        FROM
+          "SAM.GROSSER".SOI_TAXSTATS
+        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        GROUP BY
+          State, EXTRACT(YEAR FROM DateOf), AGI_stub
+        ORDER BY
+          State, "Year", "Income Bracket"
         `;
     }
 
