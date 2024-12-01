@@ -52,7 +52,7 @@ const Dashboard = () => {
     }
     
     try {
-      const response = await fetch(`/api/tax_stats?queryId=3&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+      const response = await fetch(`/api/tax_stats?queryId=5&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
