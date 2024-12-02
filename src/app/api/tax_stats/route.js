@@ -39,8 +39,8 @@ export async function GET(request) {
     else if (queryID == 2) { // Query 1: geo location of the claimant affect uptake rate and claim amount of residential energy over time
         query = `
         SELECT 
-        EXTRACT(YEAR FROM DateOf) AS Year, -- Extract year using EXTRACT
-        State,
+        EXTRACT(YEAR FROM DateOf) AS "Year", -- Extract year using EXTRACT
+        State AS "State",
         SUM(EnergyTaxCreditAmount) AS TotalEnergyCreditsAmount, 
         SUM(NumOfEnergyTaxCredits) AS TotalNumOfEnergyCredits,
         CASE
@@ -56,9 +56,9 @@ export async function GET(request) {
         WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
       GROUP BY 
-        EXTRACT(YEAR FROM DateOf), State
+        State, DateOf
       ORDER BY 
-        Year, State
+        State, DateOf
         `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
