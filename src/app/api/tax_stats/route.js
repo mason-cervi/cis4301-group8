@@ -106,17 +106,17 @@ export async function GET(request) {
             t.State,
             t.IncomeBracket AS TypicalIncomeBracket,
             c.AvgCPI,
-            t.IncomeBracket * 1000 AS AvgNominalIncome, -- Convert AGI stub to nominal income (adjust factor as needed)
-            (t.IncomeBracket * 1000) / (c.AvgCPI / 100) AS RealIncome -- Adjust nominal income for inflation
+            t.IncomeBracket * 1000 AS "Average Nominal Income", -- Convert AGI stub to nominal income (adjust factor as needed)
+            (t.IncomeBracket * 1000) / (c.AvgCPI / 100) AS "Average Real Income" -- Adjust nominal income for inflation
         FROM 
             TypicalIncomeBracket t
         JOIN 
             AvgCPI c 
-            ON EXTRACT(YEAR FROM t.DateOf) = EXTRACT(YEAR FROM c.DateOf)
-        WHERE t.DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+            ON t.Year = c.Year
+        WHERE t.Year BETWEEN :startYear AND :endYear
           ${statesArray.length > 0 ? `AND t.State IN (${placeholders})` : ""}
         ORDER BY 
-            t.Year, t.State;
+            t.Year, t.State
         `;
     }
     else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
@@ -125,7 +125,7 @@ export async function GET(request) {
         EXTRACT(YEAR FROM s.DateOf) AS "Year",
         s.State as "State",
         s.AGI_stub AS "Income Bracket",
-        f.FedFunds AS "Fed Funds Rate",
+        AVG(f.FedFunds) AS "Average Fed Funds Rate",
         COUNT(*) AS "Total Returns",
         SUM(s.EnergyTaxCreditAmount) AS "Total Energy Credits",
         SUM(s.CareCreditsAmount) AS "Total Care Credits",
