@@ -62,7 +62,7 @@ const handlechartSelectionChange = (value) => {
 
       setchartData(jsonData.map(row => ({
         year: row.Year,
-        value: row["Uptake Rate"],
+        value: row[chartSelection],
         category: row.State,
       })))
       console.log(data[0]);
@@ -136,15 +136,13 @@ const handlechartSelectionChange = (value) => {
             style={{ width: 300 }}
             options= {[
               { value: 'Uptake Rate', label: 'Uptake Rate' },
-              { value: 'Total Energy Credits Amount', label: 'Total Energy Credits Amount' },
-              { value: 'Total Number Of Energy Credits', label: 'Total Number Of Energy Credits' },
               { value: 'Average Energy Credit Amount', label: 'Average Energy Credit Amount' },
             ]}
           />}
         </div>
       </div>
       <div className="mb-16 m-20">
-      {data.length !== 0 && <LineChart data={chartData} />}
+      {data.length !== 0 && <LineChart data={chartData}/>}
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
