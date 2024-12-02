@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
-  const [chartSelection, setChartSelection] = useState("Total Amount of Care Credits");
+  const [chartSelection, setChartSelection] = useState("Total Returns");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -136,8 +136,8 @@ const Dashboard = () => {
             style={{ width: 300 }}
             options= {[
               { value: 'Total Returns', label: 'Total Returns' },
-              { value: 'Total Number of Care Credits', label: 'Total Number of Care Credits' },
-              { value: 'Total Number of Energy Credits', label: 'Total Number of Energy Credits' },
+              { value: 'Total Energy Credits', label: 'Total Energy Credits' },
+              { value: 'Total Care Credits', label: 'Total Care Credits' }
             ]}
           />}
         </div>

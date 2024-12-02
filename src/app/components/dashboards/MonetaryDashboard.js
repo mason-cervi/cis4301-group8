@@ -140,7 +140,6 @@ const Dashboard = () => {
                 { value: 'Total Care Credits', label: 'Total Care Credits' },
                 { value: 'Total Energy Credits', label: 'Total Energy Credits' },
                 { value: 'Average Energy Credits Per Return', label: 'Total Dependent Care Credits' },
-
             ]}
           />}
         </div>
