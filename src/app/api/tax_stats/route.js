@@ -102,7 +102,7 @@ export async function GET(request) {
                 Rank = 1 -- Select the most common AGI_Stub
         )
         SELECT 
-            t.Year,
+            t.Year AS "Year",
             t.State AS "State",
             t.IncomeBracket AS TypicalIncomeBracket,
             c.AvgCPI,
