@@ -39,17 +39,16 @@ export async function GET(request) {
     else if (queryID == 2) { // Query 1: geo location of the claimant affect uptake rate and claim amount of residential energy over time
         query = `
         SELECT 
-        State as "State",
-        ZipCode as "ZIP Code",
-        EXTRACT(YEAR FROM DateOf) AS "Year", -- Extract year using EXTRACT
-        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits Amount", 
-        SUM(NumOfEnergyTaxCredits) AS "Total Number Of Energy Credits",
+        EXTRACT(YEAR FROM DateOf) AS Year, -- Extract year using EXTRACT
+        State,
+        SUM(EnergyTaxCreditAmount) AS TotalEnergyCreditsAmount, 
+        SUM(NumOfEnergyTaxCredits) AS TotalNumOfEnergyCredits,
         CASE
-            WHEN COUNT(*) > 0 THEN ROUND((SUM(NumOfEnergyTaxCredits) * 1.0 / COUNT(*)), 3)
+            WHEN COUNT(*) > 0 THEN ROUND(SUM(NumOfEnergyTaxCredits) * 1.0 / COUNT(*), 3)
             ELSE 0
         END AS "Uptake Rate", -- Percentage of returns with energy tax credits
         CASE
-            WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND((SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits)),3)
+            WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND(SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits), 3)
             ELSE 0
         END AS "Average Energy Credit Amount" -- Average credit amount per claim
       FROM 
@@ -57,31 +56,67 @@ export async function GET(request) {
         WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
       GROUP BY 
-        EXTRACT(YEAR FROM DateOf), State, ZipCode
+        EXTRACT(YEAR FROM DateOf), State
       ORDER BY 
-        "Year",State, ZipCode
+        Year, State
         `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
         query = `
-        SELECT
-        EXTRACT(YEAR FROM t.DateOf) AS "Year",
-        t.State AS "State",
-        t.AGI_stub AS "Income Bracket",
-        AVG(t.AGI_stub) AS "Average Nominal Income",
-        AVG(t.AGI_stub) / (AVG(c.CPIAUCSL) / 100) AS "Average Real Income",
-        AVG(c.CPIAUCSL) AS "Consumer Price Index"
-        FROM
-          "SAM.GROSSER".SOI_TAXSTATS t
-        JOIN
-          "SAM.GROSSER".ConsumerPriceIndex c
-          ON EXTRACT(YEAR FROM t.DateOf) = EXTRACT(YEAR FROM c.DateOf)
+        WITH AvgCPI AS (
+            SELECT 
+                EXTRACT(YEAR FROM c.DateOf) AS Year,
+                AVG(c.CPIAUCSL) AS AvgCPI -- Calculate average CPI for each year
+            FROM 
+                "SAM.GROSSER".ConsumerPriceIndex c
+            GROUP BY 
+                EXTRACT(YEAR FROM c.DateOf)
+        ),
+        ModeAGIStub AS (
+            SELECT 
+                EXTRACT(YEAR FROM t.DateOf) AS Year,
+                t.State,
+                t.AGI_stub AS IncomeBracket,
+                COUNT(*) AS StubCount -- Count occurrences of each AGI_Stub
+            FROM 
+                "SAM.GROSSER".SOI_TaxStats t
+            GROUP BY 
+                EXTRACT(YEAR FROM t.DateOf), t.State, t.AGI_stub
+        ),
+        TypicalIncomeBracket AS (
+            SELECT 
+                Year,
+                State,
+                IncomeBracket -- The most common AGI_Stub for each year and state
+            FROM (
+                SELECT 
+                    Year,
+                    State,
+                    IncomeBracket,
+                    StubCount,
+                    ROW_NUMBER() OVER (PARTITION BY Year, State ORDER BY StubCount DESC) AS Rank
+                FROM 
+                    ModeAGIStub
+            ) RankedStubs
+            WHERE 
+                Rank = 1 -- Select the most common AGI_Stub
+        )
+        SELECT 
+            t.Year,
+            t.State,
+            t.IncomeBracket AS TypicalIncomeBracket,
+            c.AvgCPI,
+            t.IncomeBracket * 1000 AS AvgNominalIncome, -- Convert AGI stub to nominal income (adjust factor as needed)
+            (t.IncomeBracket * 1000) / (c.AvgCPI / 100) AS RealIncome -- Adjust nominal income for inflation
+        FROM 
+            TypicalIncomeBracket t
+        JOIN 
+            AvgCPI c 
+            ON EXTRACT(YEAR FROM t.DateOf) = EXTRACT(YEAR FROM c.DateOf)
         WHERE t.DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
           ${statesArray.length > 0 ? `AND t.State IN (${placeholders})` : ""}
-        GROUP BY
-          EXTRACT(YEAR FROM t.DateOf), t.State, t.AGI_stub
-        ORDER BY
-          "Year", t.State, "Income Bracket"
+        ORDER BY 
+            t.Year, t.State;
         `;
     }
     else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
@@ -90,7 +125,7 @@ export async function GET(request) {
         EXTRACT(YEAR FROM s.DateOf) AS "Year",
         s.State as "State",
         s.AGI_stub AS "Income Bracket",
-        AVG(f.FedFunds) AS "Average Fed Funds Rate",
+        f.FedFunds AS "Fed Funds Rate",
         COUNT(*) AS "Total Returns",
         SUM(s.EnergyTaxCreditAmount) AS "Total Energy Credits",
         SUM(s.CareCreditsAmount) AS "Total Care Credits",
