@@ -69,8 +69,8 @@ export async function GET(request) {
         t.State AS "State",
         t.AGI_stub AS "Income Bracket",
         AVG(t.AGI_stub) AS "Average Nominal Income",
-        AVG(t.AGI_stub) / (AVG(c.CPIAUCSL) / 100) AS "Real Income",
-        AVG(c.CPIAUCSL) AS "Average CPI"
+        AVG(t.AGI_stub) / (AVG(c.CPIAUCSL) / 100) AS "Average Real Income",
+        AVG(c.CPIAUCSL) AS "Consumer Price Index"
         FROM
           "SAM.GROSSER".SOI_TAXSTATS t
         JOIN
@@ -88,7 +88,7 @@ export async function GET(request) {
         query = `
         SELECT
         EXTRACT(YEAR FROM s.DateOf) AS "Year",
-        s.State,
+        s.State as "State",
         s.AGI_stub AS "Income Bracket",
         AVG(f.FedFunds) AS "Average Fed Funds Rate",
         COUNT(*) AS "Total Returns",
@@ -111,7 +111,7 @@ export async function GET(request) {
     else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
         query = `
         SELECT
-        State,
+        State as "State",
         EXTRACT(YEAR FROM DateOf) AS "Year",
         AGI_stub AS "Income Bracket",
         COUNT(*) AS "Total Returns",

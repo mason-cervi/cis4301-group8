@@ -136,8 +136,11 @@ const Dashboard = () => {
             style={{ width: 300 }}
             options= {[
                 { value: 'Average Nominal Income', label: 'Average Nominal Income' },
-                { value: 'Real Income', label: 'Real Income' },
-                { value: 'Average CPI', label: 'Average CPI' }
+                { value: 'Real Income', label: 'Average Real Income' },
+                { value: 'Average CPI', label: 'Consumer Price Index' }
+//                 { value: 'Average Real Income', label: 'Average Real Income' },
+//                 { value: 'Consumer Price Index', label: 'Consumer Price Index' },
+
             ]}
           />}
         </div>

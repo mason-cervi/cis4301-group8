@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
-  const [chartSelection, setChartSelection] = useState("Total Amount of Care Credits");
+  const [chartSelection, setChartSelection] = useState("Average Energy Credits Per Return");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -135,11 +135,11 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-                { value: 'Average Fed Funds Rate', label: 'Average Fed Funds Rate' },
+                { value: 'Average Fed Funds Rate', label: 'Federal Funds Rate' },
                 { value: 'Total Returns', label: 'Total Returns' },
-                { value: 'Total Energy Credits', label: 'Total Energy Credits' },
                 { value: 'Total Care Credits', label: 'Total Care Credits' },
-                { value: 'Average Energy Credits Per Return', label: 'Average Energy Credits Per Return' }
+                { value: 'Total Energy Credits', label: 'Total Energy Credits' },
+                { value: 'Average Energy Credits Per Return', label: 'Total Dependent Care Credits' },
             ]}
           />}
         </div>
