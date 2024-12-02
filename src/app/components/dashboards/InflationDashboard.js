@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
-  const [chartSelection, setChartSelection] = useState("Total Amount of Care Credits");
+  const [chartSelection, setChartSelection] = useState("Average Nominal Income");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -52,7 +52,7 @@ const Dashboard = () => {
     }
     
     try {
-      const response = await fetch(`/api/tax_stats?queryId=5&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+      const response = await fetch(`/api/tax_stats?queryId=3&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -135,9 +135,9 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-                { value: 'Average Nominal income', label: 'Average Nominal income' },
-                { value: 'Average Real Income', label: 'Average Real Income' },
-                { value: 'Average Consumer Price Index', label: 'Average Consumer Price Index ' },
+                { value: 'Average Nominal Income', label: 'Average Nominal Income' },
+                { value: 'Real Income', label: 'Real Income' },
+                { value: 'Average CPI', label: 'Average CPI' }
             ]}
           />}
         </div>
