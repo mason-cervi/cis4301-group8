@@ -57,9 +57,9 @@ export async function GET(request) {
         WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
       GROUP BY 
-        State, ZipCode, EXTRACT(YEAR FROM DateOf) -- Use EXTRACT in GROUP BY
+        EXTRACT(YEAR FROM DateOf), State, ZipCode
       ORDER BY 
-        State, "Year", ZipCode
+        "Year",State, ZipCode
         `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
