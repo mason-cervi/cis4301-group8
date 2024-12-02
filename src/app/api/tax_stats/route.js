@@ -103,7 +103,7 @@ export async function GET(request) {
         )
         SELECT 
             t.Year,
-            t.State,
+            t.State AS "State",
             t.IncomeBracket AS TypicalIncomeBracket,
             c.AvgCPI,
             t.IncomeBracket * 1000 AS "Average Nominal Income", -- Convert AGI stub to nominal income (adjust factor as needed)
