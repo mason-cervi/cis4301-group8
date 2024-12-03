@@ -51,20 +51,20 @@ export async function GET(request) {
             WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND(SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits), 3)
             ELSE 0
         END AS "Average Energy Credit Amount" -- Average credit amount per claim
-      FROM 
-        "SAM.GROSSER".SOI_TAXSTATS
-        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-        ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-      GROUP BY 
-        State, DateOf
-      ORDER BY 
-        State, DateOf
-        `;
+        FROM 
+          "SAM.GROSSER".SOI_TAXSTATS
+          WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        GROUP BY 
+          State, DateOf
+        ORDER BY 
+          State, DateOf
+          `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
         query = `
         WITH AvgCPI AS (
-            SELECT 
+        SELECT 
                 EXTRACT(YEAR FROM c.DateOf) AS Year,
                 AVG(c.CPIAUCSL) AS AvgCPI -- Calculate average CPI for each year
             FROM 
@@ -115,9 +115,11 @@ export async function GET(request) {
             ON t.Year = c.Year
         WHERE t.Year BETWEEN :startYear AND :endYear
           ${statesArray.length > 0 ? `AND t.State IN (${placeholders})` : ""}
+
+
         ORDER BY 
             t.Year, t.State
-        `;
+            `;
     }
     else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
         query = `

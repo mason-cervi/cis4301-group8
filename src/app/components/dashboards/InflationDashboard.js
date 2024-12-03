@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, Slider, Select } from 'antd';
 import DataTable from '../DataTable';
-import LineChart from '../LineChart';
+import AreaChartComponent from '../Q3Chart'; 
 import StateMap from '../StateMap';
 
 const states = [
@@ -29,7 +29,7 @@ const Dashboard = () => {
 
   const handleSliderChange = (value) => {
     setRange(value);
-}
+  }
 
   const handlechartSelectionChange = (value) => {
     setChartSelection(value);
@@ -39,7 +39,7 @@ const Dashboard = () => {
       value: row[value],
       category: row.State,
     })))
-}
+  }
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -142,7 +142,7 @@ const Dashboard = () => {
         </div>
       </div>
       <div className="mb-16 m-20">
-      {data.length !== 0 && <LineChart data={chartData} />}
+      {data.length !== 0 && <AreaChartComponent data={chartData} />}
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
