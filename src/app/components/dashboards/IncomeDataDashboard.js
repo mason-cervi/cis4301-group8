@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, Slider, Select } from 'antd';
 import DataTable from '../DataTable';
-import LineChart from '../LineChart';
+import AreaChartComponent from '../ChartQ5';
 import StateMap from '../StateMap';
 
 const states = [
@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
-  const [chartSelection, setChartSelection] = useState("Total Returns");
+  const [chartSelection, setChartSelection] = useState("Low Income");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -52,7 +52,7 @@ const Dashboard = () => {
     }
     
     try {
-      const response = await fetch(`/api/tax_stats?queryId=5&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+      const response = await fetch(`/api/tax_stats?queryId=7&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -125,7 +125,7 @@ const Dashboard = () => {
       </div>
       <div className="mb-8 font-light flex items-center justify-between">
         <div className="flex-1 text-center">
-          {data.length !== 0 && <>{chartSelection} by State</>}
+          {data.length !== 0 && <>Income Distribution: {chartSelection}</>}
         </div>
 
         <div className="flex-none mr-28">
@@ -135,18 +135,22 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-              // { value: 'Total Returns', label: 'Total Returns' },
+<<<<<<< Updated upstream
+              { value: 'Total Returns', label: 'Total Returns' },
               { value: 'Total Energy Credits', label: 'Total Energy Credits' },
-              { value: 'Total Care Credits', label: 'Total Care Credits' },
-              { value: 'Average Care Credits Per Dependent', label: 'Average Care Credits Per Dependent' },
-              { value: 'Average Energy Credit Amount', label: 'Average Energy Credit Amounts' },
-
+              { value: 'Total Care Credits', label: 'Total Care Credits' }
+=======
+                { value: 'Low Income', label: 'Low Income' },
+                { value: 'Middle Income', label: 'Middle Income' },
+                { value: 'High Income', label: 'High Income' },
+>>>>>>> Stashed changes
             ]}
           />}
         </div>
       </div>
       <div className="mb-16 m-20">
-      {data.length !== 0 && <LineChart data={chartData} />}
+        {data.length !== 0 && <AreaChartComponent
+          data={chartData} />}
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}

@@ -51,20 +51,20 @@ export async function GET(request) {
             WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND(SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits), 3)
             ELSE 0
         END AS "Average Energy Credit Amount" -- Average credit amount per claim
-        FROM 
-          "SAM.GROSSER".SOI_TAXSTATS
-          WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-        GROUP BY 
-          State, DateOf
-        ORDER BY 
-          State, DateOf
-          `;
+      FROM 
+        "SAM.GROSSER".SOI_TAXSTATS
+        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+        ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+      GROUP BY 
+        State, DateOf
+      ORDER BY 
+        State, DateOf
+        `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
         query = `
         WITH AvgCPI AS (
-        SELECT 
+            SELECT 
                 EXTRACT(YEAR FROM c.DateOf) AS Year,
                 AVG(c.CPIAUCSL) AS AvgCPI -- Calculate average CPI for each year
             FROM 
@@ -106,45 +106,64 @@ export async function GET(request) {
             t.State AS "State",
             t.IncomeBracket AS TypicalIncomeBracket,
             c.AvgCPI,
-            CASE 
-                WHEN t.IncomeBracket = 1 THEN 12500  -- Midpoint of $1-$25,000
-                WHEN t.IncomeBracket = 2 THEN 37500  -- Midpoint of $25,001-$50,000
-                WHEN t.IncomeBracket = 3 THEN 62500  -- Midpoint of $50,001-$75,000
-                WHEN t.IncomeBracket = 4 THEN 87500  -- Midpoint of $75,001-$100,000
-                WHEN t.IncomeBracket = 5 THEN 150000 -- Midpoint of $100,001-$200,000
-                WHEN t.IncomeBracket = 6 THEN 250000 -- Conservative estimate for $200,001+
-                ELSE 0 
-            END AS "Average Nominal Income",
-            (CASE 
-                WHEN t.IncomeBracket = 1 THEN 12500
-                WHEN t.IncomeBracket = 2 THEN 37500
-                WHEN t.IncomeBracket = 3 THEN 62500
-                WHEN t.IncomeBracket = 4 THEN 87500
-                WHEN t.IncomeBracket = 5 THEN 150000
-                WHEN t.IncomeBracket = 6 THEN 250000
-                ELSE 0 
-            END) / (c.AvgCPI / 100) AS "Average Real Income"
-        FROM TypicalIncomeBracket t
+            t.IncomeBracket * 1000 AS "Average Nominal Income", -- Convert AGI stub to nominal income (adjust factor as needed)
+            (t.IncomeBracket * 1000) / (c.AvgCPI / 100) AS "Average Real Income" -- Adjust nominal income for inflation
+        FROM 
+            TypicalIncomeBracket t
         JOIN 
             AvgCPI c 
             ON t.Year = c.Year
         WHERE t.Year BETWEEN :startYear AND :endYear
           ${statesArray.length > 0 ? `AND t.State IN (${placeholders})` : ""}
-
-
         ORDER BY 
             t.Year, t.State
-            `;
+        `;
     }
     else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
         query = `
-        WITH ModeAGIStub AS (
-        SELECT 
-            EXTRACT(YEAR FROM s.DateOf) AS Year, -- Extract year
-            s.State AS State,
-            s.AGI_stub AS IncomeBracket,
-            COUNT(*) AS StubCount -- Count occurrences of each AGI_stub
+        SELECT
+        EXTRACT(YEAR FROM s.DateOf) AS "Year",
+        s.State as "State",
+        s.AGI_stub AS "Income Bracket",
+        AVG(f.FedFunds) AS "Average Fed Funds Rate",
+        COUNT(*) AS "Total Returns",
+        SUM(s.EnergyTaxCreditAmount) AS "Total Energy Credits",
+        SUM(s.CareCreditsAmount) AS "Total Care Credits",
+          CASE
+            WHEN COUNT(*) > 0 THEN SUM(s.EnergyTaxCreditAmount) * 1.0 / COUNT(*)
+            ELSE 0
+          END AS "Average Energy Credits Per Return"
         FROM 
+<<<<<<< Updated upstream
+          "SAM.GROSSER".FederalFunds f, "SAM.GROSSER".SOI_TAXSTATS s
+        WHERE s.DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+          ${statesArray.length > 0 ? `AND s.State IN (${placeholders})` : ""}
+        GROUP BY
+          EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
+        ORDER BY
+          "Year", s.State, "Income Bracket"
+         `;
+    }
+    else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
+        query = `
+        SELECT
+        State as "State",
+        EXTRACT(YEAR FROM DateOf) AS "Year",
+        AGI_stub AS "Income Bracket",
+        COUNT(*) AS "Total Returns",
+        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits",
+        SUM(CareCreditsAmount) AS "Total Care Credits"
+        FROM
+          "SAM.GROSSER".SOI_TAXSTATS
+        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        GROUP BY
+          State, EXTRACT(YEAR FROM DateOf), AGI_stub
+        ORDER BY
+          State, "Year", "Income Bracket"
+        `;
+    }
+=======
             "SAM.GROSSER".SOI_TAXSTATS s
         GROUP BY 
             EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
@@ -181,8 +200,7 @@ export async function GET(request) {
             CASE
                 WHEN SUM(s.NumOfCareCredits) > 0 THEN ROUND(SUM(s.CareCreditsAmount) * 1.0 / SUM(s.NumOfCareCredits), 3)
                 ELSE 0
-            END AS "Average Care Credits Per Dependent", -- Average care credits per dependent per year
-            t.ModeIncomeBracket * 1000 AS "Average Nominal Income" 
+            END AS "Average Care Credits Per Dependent" -- Average care credits per dependent per year
         FROM 
             "SAM.GROSSER".SOI_TAXSTATS s
         JOIN 
@@ -242,7 +260,48 @@ export async function GET(request) {
           EXTRACT(YEAR FROM DateOf)
       `;
     }
+    else if (queryID == 7) {  //Income bracket split
+      query = `
+      WITH IncomeBracketCategories AS (
+        SELECT 
+          EXTRACT(YEAR FROM DateOf) AS Year,
+          State,
+          AGI_stub AS IncomeBracket,
+          COUNT(*) AS "Number of Individuals under Bracket",
+          CASE 
+            WHEN AGI_stub <= 2 THEN 'Low Income'
+            WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
+            WHEN AGI_stub >= 5 THEN 'High Income'
+          END AS IncomeCategory
+        FROM 
+          "SAM.GROSSER".SOI_TaxStats
+        WHERE 
+          DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
+          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        GROUP BY 
+          EXTRACT(YEAR FROM DateOf), 
+          State, 
+          AGI_stub
+      )
+      SELECT 
+        Year,
+        State,
+        IncomeCategory,
+        SUM("Number of Individuals under Bracket") AS TotalReturns
+      FROM 
+        IncomeBracketCategories
+      GROUP BY 
+        Year, 
+        State, 
+        IncomeCategory
+      ORDER BY 
+        Year, 
+        State, 
+        IncomeCategory
+      `;
+    }
 
+>>>>>>> Stashed changes
 
     const bindParams = {
       startYear: Number(startYear),
