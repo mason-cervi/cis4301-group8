@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, Slider, Select } from 'antd';
 import DataTable from '../DataTable';
-import LineChart from '../LineChart';
+import LineChart from '../FedChart';
 import StateMap from '../StateMap';
 
 const states = [
@@ -21,7 +21,8 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
-  const [chartSelection, setChartSelection] = useState("Average Energy Credits Per Return");
+  const [chartSelection, setChartSelection] = useState("Average Income Bracket");
+  const [fedFundsData, setFedFundsData] = useState([]);
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -40,6 +41,24 @@ const Dashboard = () => {
       category: row.State,
     })))
 }
+
+  const fetchFedFundsData = async () => {
+    try {
+      const response = await fetch(`/api/tax_stats?queryId=6&startYear=${range[0]}&endYear=${range[1]}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const jsonData = await response.json();
+      setFedFundsData(jsonData.map(row => ({
+        year: row.Year,
+        FedFundsRate: row.FedFundsRate,
+      })));
+    } catch (error) {
+      console.error('Error fetching Fed Funds data:', error);
+      setFedFundsData([]);
+
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -64,7 +83,8 @@ const Dashboard = () => {
         year: row.Year,
         value: row[chartSelection],
         category: row.State,
-      })))
+      })));
+      await fetchFedFundsData(); // Fetch Fed Funds data concurrently
       console.log(data[0]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -135,17 +155,18 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-                { value: 'Average Fed Funds Rate', label: 'Federal Funds Rate' },
-                { value: 'Total Returns', label: 'Total Returns' },
-                { value: 'Total Care Credits', label: 'Total Care Credits' },
-                { value: 'Total Energy Credits', label: 'Total Energy Credits' },
-                { value: 'Average Energy Credits Per Return', label: 'Total Dependent Care Credits' },
+                { value: 'Average Care Credits Per Dependent', label: 'Average Care Credits Per Dependent' },
+                { value: 'Average Energy Credits', label: 'Average Energy Credits' },
+                { value: 'Average Income Bracket', label: 'Average Income Bracket' },
+                { value: 'Average Nominal Income', label: 'Average Nominal Income' } 
             ]}
           />}
         </div>
       </div>
       <div className="mb-16 m-20">
-      {data.length !== 0 && <LineChart data={chartData} />}
+        {/* {data.length !== 0 && <LineChart data={chartData} fedFundsData={fedFundsData} />} */}
+        {/* Always pass fedFundsData, even if data is empty */}
+        <LineChart data={chartData} fedFundsData={fedFundsData} />
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
