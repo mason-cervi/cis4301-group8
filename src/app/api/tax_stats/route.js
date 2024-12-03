@@ -134,36 +134,6 @@ export async function GET(request) {
             ELSE 0
           END AS "Average Energy Credits Per Return"
         FROM 
-<<<<<<< Updated upstream
-          "SAM.GROSSER".FederalFunds f, "SAM.GROSSER".SOI_TAXSTATS s
-        WHERE s.DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-          ${statesArray.length > 0 ? `AND s.State IN (${placeholders})` : ""}
-        GROUP BY
-          EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
-        ORDER BY
-          "Year", s.State, "Income Bracket"
-         `;
-    }
-    else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
-        query = `
-        SELECT
-        State as "State",
-        EXTRACT(YEAR FROM DateOf) AS "Year",
-        AGI_stub AS "Income Bracket",
-        COUNT(*) AS "Total Returns",
-        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits",
-        SUM(CareCreditsAmount) AS "Total Care Credits"
-        FROM
-          "SAM.GROSSER".SOI_TAXSTATS
-        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-        GROUP BY
-          State, EXTRACT(YEAR FROM DateOf), AGI_stub
-        ORDER BY
-          State, "Year", "Income Bracket"
-        `;
-    }
-=======
             "SAM.GROSSER".SOI_TAXSTATS s
         GROUP BY 
             EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
@@ -301,7 +271,6 @@ export async function GET(request) {
       `;
     }
 
->>>>>>> Stashed changes
 
     const bindParams = {
       startYear: Number(startYear),

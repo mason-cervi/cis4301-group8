@@ -135,15 +135,9 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-<<<<<<< Updated upstream
-              { value: 'Total Returns', label: 'Total Returns' },
-              { value: 'Total Energy Credits', label: 'Total Energy Credits' },
-              { value: 'Total Care Credits', label: 'Total Care Credits' }
-=======
                 { value: 'Low Income', label: 'Low Income' },
                 { value: 'Middle Income', label: 'Middle Income' },
                 { value: 'High Income', label: 'High Income' },
->>>>>>> Stashed changes
             ]}
           />}
         </div>
