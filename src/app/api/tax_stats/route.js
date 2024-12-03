@@ -121,47 +121,111 @@ export async function GET(request) {
     }
     else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
         query = `
-        SELECT
-        EXTRACT(YEAR FROM s.DateOf) AS "Year",
-        s.State as "State",
-        s.AGI_stub AS "Income Bracket",
-        AVG(f.FedFunds) AS "Average Fed Funds Rate",
-        COUNT(*) AS "Total Returns",
-        SUM(s.EnergyTaxCreditAmount) AS "Total Energy Credits",
-        SUM(s.CareCreditsAmount) AS "Total Care Credits",
-          CASE
-            WHEN COUNT(*) > 0 THEN SUM(s.EnergyTaxCreditAmount) * 1.0 / COUNT(*)
-            ELSE 0
-          END AS "Average Energy Credits Per Return"
+        WITH ModeAGIStub AS (
+        SELECT 
+            EXTRACT(YEAR FROM s.DateOf) AS Year, -- Extract year
+            s.State AS State,
+            s.AGI_stub AS IncomeBracket,
+            COUNT(*) AS StubCount -- Count occurrences of each AGI_stub
         FROM 
-          "SAM.GROSSER".FederalFunds f, "SAM.GROSSER".SOI_TAXSTATS s
-        WHERE s.DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-          ${statesArray.length > 0 ? `AND s.State IN (${placeholders})` : ""}
-        GROUP BY
-          EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
-        ORDER BY
-          "Year", s.State, "Income Bracket"
-         `;
-    }
-    else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
-        query = `
-        SELECT
-        State as "State",
-        EXTRACT(YEAR FROM DateOf) AS "Year",
-        AGI_stub AS "Income Bracket",
-        COUNT(*) AS "Total Returns",
-        SUM(EnergyTaxCreditAmount) AS "Total Energy Credits",
-        SUM(CareCreditsAmount) AS "Total Care Credits"
-        FROM
-          "SAM.GROSSER".SOI_TAXSTATS
-        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-          ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-        GROUP BY
-          State, EXTRACT(YEAR FROM DateOf), AGI_stub
-        ORDER BY
-          State, "Year", "Income Bracket"
+            "SAM.GROSSER".SOI_TAXSTATS s
+        GROUP BY 
+            EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
+        ),
+        TypicalIncomeBracket AS (
+            SELECT 
+                Year,
+                State,
+                IncomeBracket AS ModeIncomeBracket -- The most common AGI_stub for each state and year
+            FROM (
+                SELECT 
+                    EXTRACT(YEAR FROM s.DateOf) AS Year,
+                    s.State AS State,
+                    s.AGI_stub AS IncomeBracket,
+                    COUNT(*) AS StubCount,
+                    ROW_NUMBER() OVER (PARTITION BY EXTRACT(YEAR FROM s.DateOf), s.State ORDER BY COUNT(*) DESC) AS Rank
+                FROM 
+                    "SAM.GROSSER".SOI_TAXSTATS s
+                GROUP BY 
+                    EXTRACT(YEAR FROM s.DateOf), s.State, s.AGI_stub
+            ) RankedStubs
+            WHERE 
+                Rank = 1 -- Select the most frequent (mode) income bracket
+        )
+        SELECT 
+            EXTRACT(YEAR FROM s.DateOf) AS "Year", -- Repeat calculation for Year
+            s.State AS "State",
+            t.ModeIncomeBracket AS "Average Income Bracket", -- Include the mode income bracket
+            f.FedFunds AS "Federal Funds Rate", -- Use the Fed Funds rate for each year
+            CASE
+                WHEN SUM(s.NumOfEnergyTaxCredits) > 0 THEN ROUND(SUM(s.EnergyTaxCreditAmount) * 1.0 / SUM(s.NumOfEnergyTaxCredits), 3)
+                ELSE 0
+            END AS "Average Energy Credits", -- Average energy credits per year
+            CASE
+                WHEN SUM(s.NumOfCareCredits) > 0 THEN ROUND(SUM(s.CareCreditsAmount) * 1.0 / SUM(s.NumOfCareCredits), 3)
+                ELSE 0
+            END AS "Average Care Credits Per Dependent", -- Average care credits per dependent per year
+            t.ModeIncomeBracket * 1000 AS "Average Nominal Income" 
+        FROM 
+            "SAM.GROSSER".SOI_TAXSTATS s
+        JOIN 
+            TypicalIncomeBracket t 
+            ON s.State = t.State 
+              AND EXTRACT(YEAR FROM s.DateOf) = t.Year 
+        JOIN 
+            "SAM.GROSSER".FederalFunds f 
+            ON EXTRACT(YEAR FROM s.DateOf) = EXTRACT(YEAR FROM f.DateOf) 
+        WHERE 
+            s.DateOf BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
+                        AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+            ${statesArray.length > 0 ? `AND s.State IN (${placeholders})` : ""}
+        GROUP BY 
+            EXTRACT(YEAR FROM s.DateOf), s.State, t.ModeIncomeBracket, f.FedFunds -- Repeat full Year calculation
+        ORDER BY 
+            EXTRACT(YEAR FROM s.DateOf), s.State
+          `;
+        }
+        else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
+            query = `
+            SELECT
+            State as "State",
+            EXTRACT(YEAR FROM DateOf) AS "Year",
+            AGI_stub AS "Income Bracket",
+            COUNT(*) AS "Total Returns",
+            SUM(EnergyTaxCreditAmount) AS "Total Energy Credits",
+            SUM(CareCreditsAmount) AS "Total Care Credits",
+            CASE
+                WHEN SUM(NumOfCareCredits) > 0 THEN ROUND(SUM(CareCreditsAmount) * 1.0 / SUM(NumOfCareCredits), 3)
+                ELSE 0
+            END AS "Average Care Credits Per Dependent",
+            CASE
+                WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND(SUM(EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits), 3)
+                ELSE 0
+            END AS "Average Energy Credit Amount"
+            FROM
+              "SAM.GROSSER".SOI_TAXSTATS
+            WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+              ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+            GROUP BY
+              State, EXTRACT(YEAR FROM DateOf), AGI_stub
+            ORDER BY
+              State, "Year", "Income Bracket"
         `;
     }
+    else if (queryID === 6) { // Fed Funds Rate query
+      query = `
+        SELECT 
+          EXTRACT(YEAR FROM DateOf) AS "Year",
+          FedFunds AS "FedFundsRate"
+        FROM 
+          "SAM.GROSSER".FederalFunds
+        WHERE 
+          EXTRACT(YEAR FROM DateOf) BETWEEN :startYear AND :endYear
+        ORDER BY 
+          EXTRACT(YEAR FROM DateOf)
+      `;
+    }
+
 
     const bindParams = {
       startYear: Number(startYear),
