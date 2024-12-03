@@ -158,7 +158,6 @@ const Dashboard = () => {
                 { value: 'Average Care Credits Per Dependent', label: 'Average Care Credits Per Dependent' },
                 { value: 'Average Energy Credits', label: 'Average Energy Credits' },
                 { value: 'Average Income Bracket', label: 'Average Income Bracket' },
-                { value: 'Average Nominal Income', label: 'Average Nominal Income' } 
             ]}
           />}
         </div>
