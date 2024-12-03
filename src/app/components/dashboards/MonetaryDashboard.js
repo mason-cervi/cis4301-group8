@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, Slider, Select } from 'antd';
 import DataTable from '../DataTable';
-import LineChart from '../FedChart';
+import AreaChartComponent from '../FedChart';
 import StateMap from '../StateMap';
 
 const states = [
@@ -166,7 +166,7 @@ const Dashboard = () => {
       <div className="mb-16 m-20">
         {/* {data.length !== 0 && <LineChart data={chartData} fedFundsData={fedFundsData} />} */}
         {/* Always pass fedFundsData, even if data is empty */}
-        <LineChart data={chartData} fedFundsData={fedFundsData} />
+        <AreaChartComponent data={chartData} fedFundsData={fedFundsData} />
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
