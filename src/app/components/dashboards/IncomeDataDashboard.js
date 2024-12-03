@@ -135,9 +135,12 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-              { value: 'Total Returns', label: 'Total Returns' },
+              // { value: 'Total Returns', label: 'Total Returns' },
               { value: 'Total Energy Credits', label: 'Total Energy Credits' },
-              { value: 'Total Care Credits', label: 'Total Care Credits' }
+              { value: 'Total Care Credits', label: 'Total Care Credits' },
+              { value: 'Average Care Credits Per Dependent', label: 'Average Care Credits Per Dependent' },
+              { value: 'Average Energy Credit Amount', label: 'Average Energy Credit Amounts' },
+
             ]}
           />}
         </div>
