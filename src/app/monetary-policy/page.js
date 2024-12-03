@@ -21,7 +21,7 @@ export default function MonetaryPolicyPage() {
             <div className="flex items-center justify-center mt-6">
                 <ul className="list-disc text-left font-light text-gray-700 max-w-2xl text-lg">
                     <li className="mb-2">How do changes in interest rates impact income levels?</li>
-                    <li className="mb-2">Are some income groups more affected than others?</li>
+                    <li className="mb-2">Do changes in interest rates influence tax credits?</li>
                 </ul>
             </div>
             </div>
@@ -29,7 +29,7 @@ export default function MonetaryPolicyPage() {
                 <p className="text-lg text-gray-700 max-w-2xl mb-2">
                     What’s the process?</p> <br/>
                     <p className="text-lg text-gray-700 font-light max-w-2xl">
-                    We’ll align changes in the Federal Funds Rate with average income data for each group. By looking at year-over-year trends, we can see how shifts in interest rates ripple through the economy, influencing wages and income levels in different sectors.
+                    We’ll align changes in the Federal Funds Rate with average nominal income and average tax credits. By looking at year-over-year trends, we can see how shifts in interest rates ripple through the economy, influencing income levels and income distribution of a state.
 					This can provide insights into how monetary policy affects your take-home pay.
                 </p>
             </div>
