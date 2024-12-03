@@ -32,14 +32,14 @@ const Dashboard = () => {
   }
 
   const handlechartSelectionChange = (value) => {
-    setChartSelection(value);
+  setChartSelection(value);
 
-    setchartData(data.map(row => ({
-      year: row.Year,
-      value: row[value],
-      category: row.State,
-    })))
-  }
+  setchartData(data.map(row => ({
+    year: row.Year,  // Note the capital Y
+    "Average Nominal Income": row["Average Nominal Income"],
+    "Average Real Income": row["Average Real Income"]
+  })))
+}
 
   const fetchData = async () => {
     setIsLoading(true);

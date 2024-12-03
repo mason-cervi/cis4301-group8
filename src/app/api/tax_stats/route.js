@@ -106,10 +106,25 @@ export async function GET(request) {
             t.State AS "State",
             t.IncomeBracket AS TypicalIncomeBracket,
             c.AvgCPI,
-            t.IncomeBracket * 1000 AS "Average Nominal Income", -- Convert AGI stub to nominal income (adjust factor as needed)
-            (t.IncomeBracket * 1000) / (c.AvgCPI / 100) AS "Average Real Income" -- Adjust nominal income for inflation
-        FROM 
-            TypicalIncomeBracket t
+            CASE 
+                WHEN t.IncomeBracket = 1 THEN 12500  -- Midpoint of $1-$25,000
+                WHEN t.IncomeBracket = 2 THEN 37500  -- Midpoint of $25,001-$50,000
+                WHEN t.IncomeBracket = 3 THEN 62500  -- Midpoint of $50,001-$75,000
+                WHEN t.IncomeBracket = 4 THEN 87500  -- Midpoint of $75,001-$100,000
+                WHEN t.IncomeBracket = 5 THEN 150000 -- Midpoint of $100,001-$200,000
+                WHEN t.IncomeBracket = 6 THEN 250000 -- Conservative estimate for $200,001+
+                ELSE 0 
+            END AS "Average Nominal Income",
+            (CASE 
+                WHEN t.IncomeBracket = 1 THEN 12500
+                WHEN t.IncomeBracket = 2 THEN 37500
+                WHEN t.IncomeBracket = 3 THEN 62500
+                WHEN t.IncomeBracket = 4 THEN 87500
+                WHEN t.IncomeBracket = 5 THEN 150000
+                WHEN t.IncomeBracket = 6 THEN 250000
+                ELSE 0 
+            END) / (c.AvgCPI / 100) AS "Average Real Income"
+        FROM TypicalIncomeBracket t
         JOIN 
             AvgCPI c 
             ON t.Year = c.Year
