@@ -33,9 +33,9 @@ export async function GET(request) {
         WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
         GROUP BY
-          State, DateOf
+          State, EXTRACT(YEAR FROM DateOf)
         ORDER BY
-          State, DateOf
+          State, EXTRACT(YEAR FROM DateOf)
         `;
     }
     else if (queryID == 2) { // Query 1: geo location of the claimant affect uptake rate and claim amount of residential energy over time
@@ -62,7 +62,7 @@ export async function GET(request) {
         GROUP BY 
             State, EXTRACT(YEAR FROM DateOf) -- Group by state and year
         ORDER BY 
-            State, EXTRACT(YEAR FROM DateOf);
+            State, EXTRACT(YEAR FROM DateOf)
           `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
@@ -72,10 +72,14 @@ export async function GET(request) {
             EXTRACT(YEAR FROM t.DateOf) AS Year,
             t.State AS State,
             t.AGI_stub AS IncomeBracket,
-            SUM(t.AGI_stub * t.NumReturns) AS TotalNominalIncome, -- Total nominal income (weighted by NumReturns)
-            SUM(t.NumReturns) AS TotalReturns -- Total number of returns per year/state/income bracket
+            SUM(t.AGI_stub * t.NumReturns) AS TotalNominalIncome,
+            SUM(t.NumReturns) AS TotalReturns
         FROM 
             "SAM.GROSSER".SOI_TaxStats t
+        WHERE 
+            dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
+                    AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
+            ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
         GROUP BY 
             EXTRACT(YEAR FROM t.DateOf), t.State, t.AGI_stub
         ),
@@ -84,31 +88,107 @@ export async function GET(request) {
                 w.Year,
                 w.State,
                 w.IncomeBracket,
-                w.TotalNominalIncome / w.TotalReturns AS AvgNominalIncome, -- Average nominal income (weighted)
-                c.CPIAUCSL AS CPI, -- Consumer Price Index for the year
-                (w.TotalNominalIncome / w.TotalReturns) / (c.CPIAUCSL / 100) AS RealIncome -- Inflation-adjusted real income
+                w.TotalNominalIncome / w.TotalReturns AS AvgNominalIncome,
+                c.CPIAUCSL AS CPI,
+                (w.TotalNominalIncome / w.TotalReturns) / (c.CPIAUCSL / 100) AS RealIncome
             FROM 
                 WeightedIncome w
             JOIN 
                 "SAM.GROSSER".ConsumerPriceIndex c 
-                ON w.Year = EXTRACT(YEAR FROM c.DateOf) -- Join CPI data by year
+                ON w.Year = EXTRACT(YEAR FROM c.DateOf)
         )
         SELECT 
             Year AS "Year",
             State AS "State",
             IncomeBracket,
-            ROUND(AvgNominalIncome, 2) AS "AvgNominalIncome", -- Round for readability
-            ROUND(RealIncome, 2) AS "RealIncome",
-            ROUND(CPI, 2) AS "AvgCPI" -- CPI for the year
+            ROUND(AvgNominalIncome, 2) AS "Average Nominal Income", 
+            ROUND(RealIncome, 2) AS "Average Real Income",
+            ROUND(CPI, 2) AS "AvgCPI"
         FROM 
             InflationAdjusted
         ORDER BY 
-            Year, State, IncomeBracket
-      `;
+            "Year", "State", IncomeBracket
+        `;
     }
+    // else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
+    // query = `
+    // WITH IncomeDistribution AS (
+    //     SELECT
+    //         State,
+    //         EXTRACT(YEAR FROM DateOf) AS "Year",
+    //         CASE
+    //             WHEN AGI_stub IN (1, 2) THEN 'Low Income'
+    //             WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
+    //             WHEN AGI_stub IN (5, 6) THEN 'High Income'
+    //         END AS IncomeBracket,
+    //         SUM(NumReturns) AS NumPeople,
+    //         AGI_stub
+    //     FROM
+    //         "SAM.GROSSER".SOI_TAXSTATS
+    //     WHERE
+    //         dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY')
+    //                   AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
+    //         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+    //     GROUP BY
+    //         State, EXTRACT(YEAR FROM DateOf),
+    //         CASE
+    //             WHEN AGI_stub IN (1, 2) THEN 'Low Income'
+    //             WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
+    //             WHEN AGI_stub IN (5, 6) THEN 'High Income'
+    //         END,
+    //         AGI_stub
+    // )
+    // SELECT
+    //     "State",
+    //     "Year",
+    //     SUM(CASE WHEN IncomeBracket = 'Low Income' THEN NumPeople END) AS "Low Income",
+    //     SUM(CASE WHEN IncomeBracket = 'Middle Income' THEN NumPeople END) AS "Middle Income",
+    //     SUM(CASE WHEN IncomeBracket = 'High Income' THEN NumPeople END) AS "High Income"
+    // FROM
+    //     IncomeDistribution
+    // GROUP BY
+    //     "State", "Year"
+    // ORDER BY
+    //     "State", "Year"
+    // `;
+    // }
+    // else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
+    // query = `
+    // WITH IncomeBrackets AS (
+    //     SELECT
+    //         State,
+    //         EXTRACT(YEAR FROM DateOf) AS "Year",
+    //         CASE
+    //             WHEN AGI_stub IN (1, 2) THEN 'Low Income'
+    //             WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
+    //             WHEN AGI_stub IN (5, 6) THEN 'High Income'
+    //         END AS IncomeBracket,
+    //         AGI_stub,
+    //         NumReturns
+    //     FROM
+    //         "SAM.GROSSER".SOI_TAXSTATS
+    //     WHERE
+    //         dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY')
+    //                 AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
+    //         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+    // )
+    // SELECT
+    //     State AS "State",
+    //     "Year",
+    //     SUM(CASE WHEN IncomeBracket = 'Low Income' THEN NumReturns END) AS "Low Income",
+    //     SUM(CASE WHEN IncomeBracket = 'Middle Income' THEN NumReturns END) AS "Middle Income",
+    //     SUM(CASE WHEN IncomeBracket = 'High Income' THEN NumReturns END) AS "High Income"
+    // FROM
+    //     IncomeBrackets
+    // GROUP BY
+    //     State, "Year"
+    // ORDER BY
+    //     State, "Year"
+    // `;
+        // }
     else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
-        query = `
-        WITH IncomeDistribution AS (
+    query = `
+    WITH IncomeDistribution AS (
         SELECT
             State,
             EXTRACT(YEAR FROM DateOf) AS Year,
@@ -118,6 +198,7 @@ export async function GET(request) {
                 WHEN AGI_stub IN (5, 6) THEN 'High Income'
             END AS IncomeBracket,
             SUM(NumReturns) AS NumPeople
+
         FROM
             "SAM.GROSSER".SOI_TAXSTATS
         WHERE 
@@ -131,13 +212,15 @@ export async function GET(request) {
                 WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
                 WHEN AGI_stub IN (5, 6) THEN 'High Income'
             END
-        )
-        SELECT 
+
+    )
+    SELECT 
             State,
             Year,
             IncomeBracket,
             NumPeople
-        FROM 
+
+    FROM 
             (SELECT 
                 State AS "State",
                 Year AS "Year",
@@ -147,50 +230,53 @@ export async function GET(request) {
             FROM IncomeDistribution)
         WHERE 
             Rank = 1
-        ORDER BY 
+    ORDER BY 
             State, Year 
-              `;
-        }
+    `;
+    }
     else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
-        query = `
+    query = `
+
         SELECT
         State AS "State",
-        EXTRACT(YEAR FROM DateOf) AS "Year",
-        CASE 
-            WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-            WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-            WHEN AGI_stub IN (5, 6) THEN 'High Income'
+            EXTRACT(YEAR FROM DateOf) AS "Year",
+            CASE 
+                WHEN AGI_stub IN (1, 2) THEN 'Low Income'
+                WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
+                WHEN AGI_stub IN (5, 6) THEN 'High Income'
         END AS "Income Bracket",
         SUM(NumReturns) AS "Num of People" -- Total number of people in each income group
+
         FROM
             "SAM.GROSSER".SOI_TAXSTATS
         WHERE 
             dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
-                      AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
+                    AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
             ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-        GROUP BY
+
+    GROUP BY
             State, EXTRACT(YEAR FROM DateOf), 
             CASE 
                 WHEN AGI_stub IN (1, 2) THEN 'Low Income'
                 WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
                 WHEN AGI_stub IN (5, 6) THEN 'High Income'
             END
-        ORDER BY
+    ORDER BY
             State, "Year", "Income Bracket"
-        `;
+    `;
     }
     else if (queryID === 6) { // Fed Funds Rate query
-      query = `
-        SELECT 
-          EXTRACT(YEAR FROM DateOf) AS "Year",
-          FedFunds AS "FedFundsRate"
-        FROM 
-          "SAM.GROSSER".FederalFunds
-        WHERE 
-          EXTRACT(YEAR FROM DateOf) BETWEEN :startYear AND :endYear
-        ORDER BY 
-          EXTRACT(YEAR FROM DateOf)
-      `;
+        query = `
+            SELECT 
+            EXTRACT(YEAR FROM DateOf) AS "Year",
+            FedFunds AS "FedFundsRate"
+            FROM 
+            "SAM.GROSSER".FederalFunds
+            WHERE 
+            EXTRACT(YEAR FROM DateOf) BETWEEN :startYear AND :endYear
+            ORDER BY 
+            EXTRACT(YEAR FROM DateOf)
+        `;
     }
 
 
