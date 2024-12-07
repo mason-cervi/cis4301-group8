@@ -25,7 +25,7 @@ const AreaChartComponent = ({ data }) => {
 
   return (
     <ResponsiveContainer width="100%" height={400}>
-      <AreaChart data={groupedData}>
+      <AreaChart data={groupedData} margin={{ top: 20, right: 30, left: 35, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="year" />
         <YAxis />

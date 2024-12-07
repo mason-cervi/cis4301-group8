@@ -8,7 +8,7 @@ const AreaChartComponent = ({ data, choice }) => {
   const groupedData = data.reduce((acc, item) => {
     const year = item.Year;
     acc[year] = acc[year] || {};
-    acc[year][`${item.State} - ${item['Income Bracket']}`] = (item[choice] / 1000000000).toFixed(2);
+    acc[year][`${item.State}-${item['Income Bracket']}`] = (item[choice] / 1000000000).toFixed(2);
     return acc;
   }, {});
 

@@ -214,7 +214,7 @@ const Dashboard = () => {
       <div className="mb-16 m-20">
         {/* {data.length !== 0 && <LineChart data={chartData} fedFundsData={fedFundsData} />} */}
         {/* Always pass fedFundsData, even if data is empty */}
-        <AreaChartComponent data={chartData} fedFundsData={fedFundsData} />
+        {data.length !== 0 && <AreaChartComponent data={chartData} fedFundsData={fedFundsData} />}
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
