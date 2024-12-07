@@ -12,12 +12,22 @@ import {
 } from 'recharts';
 
 const AreaChartComponent = ({ data, fedFundsData }) => {
+  // If no data, return a placeholder or empty chart
+  if (!data || data.length === 0) {
+    return (
+      <ResponsiveContainer width="100%" height={500}>
+        <div>No data available</div>
+      </ResponsiveContainer>
+    );
+  }
+
   // Group data by year, aggregating values for each category
   const groupedData = data.reduce((acc, item) => {
     const existingEntry = acc.find(entry => entry.year === item.year);
     
     if (existingEntry) {
-      existingEntry[item.category] = item.value;
+      // Ensure the value is added or created if not exists
+      existingEntry[item.category] = (existingEntry[item.category] || 0) + item.value;
     } else {
       const newEntry = { year: item.year };
       newEntry[item.category] = item.value;
@@ -39,7 +49,10 @@ const AreaChartComponent = ({ data, fedFundsData }) => {
   // Sort data by year to ensure correct x-axis ordering
   mergedData.sort((a, b) => a.year - b.year);
 
+  // Get unique categories (states) from the data
   const categories = [...new Set(data.map(item => item.category))];
+  
+  // Color palette
   const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
 
   return (

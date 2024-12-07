@@ -15,7 +15,7 @@ export async function GET(request) {
     const pool = await initialize();
     const connection = await pool.getConnection();
 
-    if (queryID == 1) { // Query 2: Geo location of claimant affect dependent care claim amount over time 
+    if (queryID == 1) { // Geo location of claimant affect dependent care claim amount over time 
         query = `
         SELECT
         State AS "State",
@@ -38,7 +38,7 @@ export async function GET(request) {
           State, EXTRACT(YEAR FROM DateOf)
         `;
     }
-    else if (queryID == 2) { // Query 1: geo location of the claimant affect uptake rate and claim amount of residential energy over time
+    else if (queryID == 2) { // geo location of the claimant affect uptake rate and claim amount of residential energy over time
       query = `
         SELECT 
         State AS "State",
@@ -193,52 +193,37 @@ export async function GET(request) {
     //     State, "Year"
     // `;
         // }
-    else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
+    else if (queryID == 4) {  // Query 4: Income bracket trends
     query = `
     WITH IncomeDistribution AS (
-        SELECT
-            State,
-            EXTRACT(YEAR FROM DateOf) AS Year,
-            CASE 
-                WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-                WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-                WHEN AGI_stub IN (5, 6) THEN 'High Income'
-            END AS IncomeBracket,
-            SUM(NumReturns) AS NumPeople
-
-        FROM
-            "SAM.GROSSER".SOI_TAXSTATS
-        WHERE 
-            dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
-                      AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
-            ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-        GROUP BY
-            State, EXTRACT(YEAR FROM DateOf), 
-            CASE 
-                WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-                WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-                WHEN AGI_stub IN (5, 6) THEN 'High Income'
-            END
-
+    SELECT
+        State,
+        EXTRACT(YEAR FROM DateOf) AS Year,
+        SUM(NumReturns * CASE 
+            WHEN AGI_stub = 1 THEN 12500
+            WHEN AGI_stub = 2 THEN 37500
+            WHEN AGI_stub = 3 THEN 62500
+            WHEN AGI_stub = 4 THEN 87500
+            WHEN AGI_stub = 5 THEN 150000
+            WHEN AGI_stub = 6 THEN 500000
+        END) / SUM(NumReturns) AS AverageIncome
+    FROM
+        "SAM.GROSSER".SOI_TAXSTATS
+    WHERE 
+        dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
+                  AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
+        ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+    GROUP BY
+        State, EXTRACT(YEAR FROM DateOf)
     )
     SELECT 
-            "State",
-            "Year",
-            "Income Bracket",
-            "Number of Returns"
-
+        State AS "State",
+        Year AS "Year",
+        ROUND(AverageIncome, 2) AS "Average Income Bracket"
     FROM 
-            (SELECT 
-                State AS "State",
-                Year AS "Year",
-                IncomeBracket AS "Income Bracket",
-                NumPeople AS "Number of Returns",
-                RANK() OVER (PARTITION BY State, Year ORDER BY NumPeople DESC) AS Rank
-            FROM IncomeDistribution)
-        WHERE 
-            Rank = 1
+        IncomeDistribution
     ORDER BY 
-            "State", "Year" 
+        State, Year
     `;
     }
     else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?

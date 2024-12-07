@@ -59,7 +59,6 @@ const Dashboard = () => {
 
     }
   };
-
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
@@ -71,21 +70,38 @@ const Dashboard = () => {
     }
     
     try {
-      const response = await fetch(`/api/tax_stats?queryId=4&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Fetch data for multiple queries
+      const careCreditsResponse = await fetch(`/api/tax_stats?queryId=1&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+      const energyCreditsResponse = await fetch(`/api/tax_stats?queryId=2&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+      const incomeBracketResponse = await fetch(`/api/tax_stats?queryId=4&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+
+      if (!careCreditsResponse.ok || !energyCreditsResponse.ok || !incomeBracketResponse.ok) {
+        throw new Error(`HTTP error!`);
       }
       
-      const jsonData = await response.json();
-      setData(jsonData);
+      const careCreditsData = await careCreditsResponse.json();
+      const energyCreditsData = await energyCreditsResponse.json();
+      const incomeBracketData = await incomeBracketResponse.json();
 
-      setchartData(jsonData.map(row => ({
+      // Combine all data and set state
+      const combinedData = careCreditsData.map(row => ({
+        Year: row.Year,
+        State: row.State,
+        'Average Care Credits Per Dependent': row['Average Care Credits Per Dependent'],
+        'Average Energy Credits': energyCreditsData.find(e => e.Year === row.Year && e.State === row.State)?.['Average Energy Credit Amount'] || 0,
+        'Average Income Bracket': incomeBracketData.find(i => i.Year === row.Year && i.State === row.State)?.['Average Income Bracket'] || 'N/A',
+      }));
+
+      setData(combinedData);
+
+      // Set initial chart data based on current selection
+      setchartData(combinedData.map(row => ({
         year: row.Year,
         value: row[chartSelection],
         category: row.State,
       })));
-      await fetchFedFundsData(); // Fetch Fed Funds data concurrently
-      console.log(data[0]);
+
+      await fetchFedFundsData();
     } catch (error) {
       console.error('Error fetching data:', error);
       setError(error.message);
@@ -93,6 +109,39 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   };
+  // const fetchData = async () => {
+  //   setIsLoading(true);
+  //   setError(null);
+  //   const statesQuery = US_state.join(",");
+
+  //   if (US_state.length === 0) {
+  //     setIsLoading(false);
+  //     return;
+  //   }
+    
+  //   try {
+  //     const response = await fetch(`/api/tax_stats?queryId=4&startYear=${range[0]}&endYear=${range[1]}&state=${statesQuery}`);
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+      
+  //     const jsonData = await response.json();
+  //     setData(jsonData);
+
+  //     setchartData(jsonData.map(row => ({
+  //       year: row.Year,
+  //       value: row[chartSelection],
+  //       category: row.State,
+  //     })));
+  //     await fetchFedFundsData(); // Fetch Fed Funds data concurrently
+  //     console.log(data[0]);
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //     setError(error.message);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   return (
     <div className="space-y-4 items-center justify-center text-center mt-10">
