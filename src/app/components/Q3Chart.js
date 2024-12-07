@@ -8,7 +8,7 @@ const AreaChartComponent = ({ data, choice }) => {
   const groupedData = data.reduce((acc, item) => {
     const year = item.Year;
     acc[year] = acc[year] || {};
-    acc[year][`${item.State} - ${item['Income Bracket']}`] = item[choice] / 1000000000;
+    acc[year][`${item.State} - ${item['Income Bracket']}`] = (item[choice] / 1000000000).toFixed(2);
     return acc;
   }, {});
 
@@ -24,6 +24,7 @@ const AreaChartComponent = ({ data, choice }) => {
       key={key}
       type="monotone"
       dataKey={key}
+      stackId="a"
       name={key}
       stroke={colors[index % colors.length]}
       fill={colors[index % colors.length]}
@@ -33,7 +34,7 @@ const AreaChartComponent = ({ data, choice }) => {
 
   return (
     <ResponsiveContainer width="100%" height={400}>
-      <AreaChart data={transformedData}>
+      <AreaChart data={transformedData} stackOffset="none">
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="Year" />
         <YAxis />

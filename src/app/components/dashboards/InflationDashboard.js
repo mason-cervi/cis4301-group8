@@ -17,6 +17,7 @@ const states = [
 const Dashboard = () => {
   const [range, setRange] = useState([2009, 2021]);
   const [US_state, setUS_State] = useState(['FL']);
+  const [chartUSstate, setchartUSstate] = useState('FL');
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -55,7 +56,7 @@ const Dashboard = () => {
       
       const jsonData = await response.json();
       setData(jsonData);
-
+      setchartUSstate(US_state);
       setchartData(jsonData)
       console.log(data[0]);
     } catch (error) {
@@ -116,7 +117,7 @@ const Dashboard = () => {
       </div>
       <div className="mb-8 font-light flex items-center justify-between">
         <div className="flex-1 text-center">
-          {data.length !== 0 && <>{chartSelection} in {US_state} by Sextile (in billions $)</>}
+          {data.length !== 0 && <>{chartSelection} in {chartUSstate} by Sextile (in billions $)</>}
         </div>
 
         <div className="flex-none mr-28">
