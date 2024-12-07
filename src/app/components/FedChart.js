@@ -65,7 +65,7 @@ const AreaChartComponent = ({ data, fedFundsData }) => {
         <YAxis 
           yAxisId="left" 
           label={{ 
-            value: 'Data Values', 
+            value: '', 
             angle: -90, 
             position: 'insideLeft',
             offset: 10
