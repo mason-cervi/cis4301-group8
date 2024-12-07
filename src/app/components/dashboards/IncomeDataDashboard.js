@@ -34,11 +34,17 @@ const Dashboard = () => {
   const handlechartSelectionChange = (value) => {
     setChartSelection(value);
 
-    setchartData(data.map(row => ({
-      year: row.Year,
-      value: row[value],
-      category: row.State,
-    })))
+    setchartData((data.map(row => {
+      if (row['Income Bracket'] === value) {
+        return {
+          year: row.Year,
+          value: row['Number of People'] / 1000,
+          category: row.State,
+        };
+      } else {
+        return null;
+      }
+    }).filter(row => row !== null)));
 }
 
   const fetchData = async () => {
@@ -60,11 +66,17 @@ const Dashboard = () => {
       const jsonData = await response.json();
       setData(jsonData);
 
-      setchartData(jsonData.map(row => ({
-        year: row.Year,
-        value: row[chartSelection],
-        category: row.State,
-      })))
+      setchartData(jsonData.map(row => {
+        if (row['Income Bracket'] === 'Low Income') {
+          return {
+            year: row.Year,
+            value: row['Number of People'] / 1000,
+            category: row.State,
+          };
+        } else {
+          return null;
+        }
+      }).filter(row => row !== null));
       console.log(data[0]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -125,7 +137,7 @@ const Dashboard = () => {
       </div>
       <div className="mb-8 font-light flex items-center justify-between">
         <div className="flex-1 text-center">
-          {data.length !== 0 && <>Income Distribution: {chartSelection}</>}
+          {data.length !== 0 && <>Income Distribution: {chartSelection} (in thousands of people)</>}
         </div>
 
         <div className="flex-none mr-28">

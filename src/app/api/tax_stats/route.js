@@ -72,7 +72,14 @@ export async function GET(request) {
             EXTRACT(YEAR FROM t.DateOf) AS Year,
             t.State AS State,
             t.AGI_stub AS IncomeBracket,
-            SUM(t.AGI_stub * t.NumReturns) AS TotalNominalIncome,
+            SUM(CASE 
+              WHEN t.AGI_stub = 1 THEN 12500
+              WHEN t.AGI_stub = 2 THEN 37500
+              WHEN t.AGI_stub = 3 THEN 62500
+              WHEN t.AGI_stub = 4 THEN 87500
+              WHEN t.AGI_stub = 5 THEN 150000
+              WHEN t.AGI_stub = 6 THEN 500000
+          END * t.NumReturns) AS TotalNominalIncome,
             SUM(t.NumReturns) AS TotalReturns
         FROM 
             "SAM.GROSSER".SOI_TaxStats t
@@ -88,9 +95,9 @@ export async function GET(request) {
                 w.Year,
                 w.State,
                 w.IncomeBracket,
-                w.TotalNominalIncome / w.TotalReturns AS AvgNominalIncome,
+                w.TotalNominalIncome,
                 c.CPIAUCSL AS CPI,
-                (w.TotalNominalIncome / w.TotalReturns) / (c.CPIAUCSL / 100) AS RealIncome
+                (w.TotalNominalIncome / (c.CPIAUCSL / 214.56)) AS RealIncome
             FROM 
                 WeightedIncome w
             JOIN 
@@ -100,14 +107,14 @@ export async function GET(request) {
         SELECT 
             Year AS "Year",
             State AS "State",
-            IncomeBracket,
-            ROUND(AvgNominalIncome, 2) AS "Average Nominal Income", 
-            ROUND(RealIncome, 2) AS "Average Real Income",
-            ROUND(CPI, 2) AS "AvgCPI"
+            IncomeBracket AS "Income Bracket",
+            ROUND(TotalNominalIncome, 2) AS "Total Nominal Income", 
+            ROUND(RealIncome, 2) AS "Total Real Income",
+            ROUND(CPI, 2) AS "CPI"
         FROM 
             InflationAdjusted
         ORDER BY 
-            "Year", "State", IncomeBracket
+            "Year", "State", "Income Bracket"
         `;
     }
     // else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
@@ -215,10 +222,10 @@ export async function GET(request) {
 
     )
     SELECT 
-            State,
-            Year,
-            IncomeBracket,
-            NumPeople
+            "State",
+            "Year",
+            "Income Bracket",
+            "Number of Returns"
 
     FROM 
             (SELECT 
@@ -231,7 +238,7 @@ export async function GET(request) {
         WHERE 
             Rank = 1
     ORDER BY 
-            State, Year 
+            "State", "Year" 
     `;
     }
     else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
@@ -245,7 +252,7 @@ export async function GET(request) {
                 WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
                 WHEN AGI_stub IN (5, 6) THEN 'High Income'
         END AS "Income Bracket",
-        SUM(NumReturns) AS "Num of People" -- Total number of people in each income group
+        SUM(NumReturns) AS "Number of People" -- Total number of people in each income group
 
         FROM
             "SAM.GROSSER".SOI_TAXSTATS

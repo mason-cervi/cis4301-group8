@@ -21,7 +21,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setchartData] = useState([]);
-  const [chartSelection, setChartSelection] = useState("Average Nominal Income");
+  const [chartSelection, setChartSelection] = useState("Total Nominal Income");
 
   const handleUS_StateChange = (value) => {
     setUS_State(value);
@@ -34,17 +34,13 @@ const Dashboard = () => {
   const handlechartSelectionChange = (value) => {
   setChartSelection(value);
 
-  setchartData(data.map(row => ({
-    year: row.Year,  // Note the capital Y
-    "Average Nominal Income": row["Average Nominal Income"],
-    "Average Real Income": row["Average Real Income"]
-  })))
+  setchartData(data);
 }
 
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
-    const statesQuery = US_state.join(",");
+    const statesQuery = US_state;
 
     if (US_state.length === 0) {
       setIsLoading(false);
@@ -60,11 +56,7 @@ const Dashboard = () => {
       const jsonData = await response.json();
       setData(jsonData);
 
-      setchartData(jsonData.map(row => ({
-        year: row.Year,
-        value: row[chartSelection],
-        category: row.State,
-      })))
+      setchartData(jsonData)
       console.log(data[0]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -79,9 +71,8 @@ const Dashboard = () => {
         <div className="mb-8">
         <div className="grid grid-cols-5 items-center">
           <div className="col-span-2 flex flex-col items-center w-full pt-4">
-          <span className="text-center font-light mb-8">Select states to display:</span>
+          <span className="text-center font-light mb-8">Select state to display:</span>
           <Select
-            mode='multiple'
             maxTagCount={10}
             defaultValue={US_state}
             onChange={handleUS_StateChange}
@@ -125,7 +116,7 @@ const Dashboard = () => {
       </div>
       <div className="mb-8 font-light flex items-center justify-between">
         <div className="flex-1 text-center">
-          {data.length !== 0 && <>{chartSelection} by State</>}
+          {data.length !== 0 && <>{chartSelection} in {US_state} by Sextile (in billions $)</>}
         </div>
 
         <div className="flex-none mr-28">
@@ -135,14 +126,14 @@ const Dashboard = () => {
             onChange={handlechartSelectionChange}
             style={{ width: 300 }}
             options= {[
-                { value: 'Average Nominal Income', label: 'Average Nominal Income' },
-                { value: 'Average Real Income', label: 'Average Real Income' },
+                { value: 'Total Nominal Income', label: 'Total Nominal Income' },
+                { value: 'Total Real Income', label: 'Total Real Income' },
             ]}
           />}
         </div>
       </div>
       <div className="mb-16 m-20">
-      {data.length !== 0 && <AreaChartComponent data={chartData} />}
+      {data.length !== 0 && <AreaChartComponent data={chartData} choice={chartSelection} />}
       </div>
       <div className="mb-8">
         {data.length !== 0 && <DataTable jsonData={data} />}
