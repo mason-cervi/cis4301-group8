@@ -10,85 +10,87 @@ export async function GET(request) {
   const statesArray = state ? state.split(",") : [];
   const placeholders = statesArray.map((_, index) => `:state${index}`).join(",");
 
+  let connection;
   try {
     let query;
-    const pool = await initialize();
-    const connection = await pool.getConnection();
+    // const pool = await initialize();
+    await initialize();
+    // connection = await pool.getConnection();
 
     if (queryID == 1) { // Geo location of claimant affect dependent care claim amount over time 
         query = `
         SELECT
-        State AS "State",
-        EXTRACT(YEAR FROM DateOf) AS "Year",
-        SUM(NumOfCareCredits * CareCreditsAmount) AS "Total Amount of Care Credits", -- Total amount considering per-zipcode data
-        SUM(NumOfCareCredits) AS "Total Number of Care Credits", -- Total number of care credits
+        "State",
+        EXTRACT(YEAR FROM "DateOf") AS "Year",
+        SUM("NumOfCareCredits" * "CareCreditsAmount") AS "Total Amount of Care Credits", -- Total amount considering per-zipcode data
+        SUM("NumOfCareCredits") AS "Total Number of Care Credits", -- Total number of care credits
         CASE
-            WHEN SUM(NumOfCareCredits) > 0 THEN 
-                ROUND(SUM(NumOfCareCredits * CareCreditsAmount) * 1.0 / SUM(NumOfCareCredits), 3) -- Average per dependent
+            WHEN SUM("NumOfCareCredits") > 0 THEN 
+                ROUND((SUM("NumOfCareCredits" * "CareCreditsAmount") * 1.0 / SUM("NumOfCareCredits"))::numeric, 3) -- Average per dependent
             ELSE 0
         END AS "Average Care Credits Per Dependent"
 
         FROM
-        "SAM.GROSSER".SOI_TAXSTATS
-        WHERE dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-        ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        "SOI_TAXSTATS"
+        WHERE "DateOf" BETWEEN TO_DATE('01/01/' || $1, 'MM/DD/YYYY') AND TO_DATE('01/01/' || $2, 'MM/DD/YYYY') 
+        ${statesArray.length > 0 ? `AND "State" IN (${statesArray.map((_, index) => `$${index + 3}`).join(", ")})` : ""}
         GROUP BY
-          State, EXTRACT(YEAR FROM DateOf)
+          "State", EXTRACT(YEAR FROM "DateOf")
         ORDER BY
-          State, EXTRACT(YEAR FROM DateOf)
+          "State", EXTRACT(YEAR FROM "DateOf")
         `;
     }
     else if (queryID == 2) { // geo location of the claimant affect uptake rate and claim amount of residential energy over time
       query = `
         SELECT 
-        State AS "State",
-        EXTRACT(YEAR FROM DateOf) AS "Year",
-        SUM(NumOfEnergyTaxCredits * EnergyTaxCreditAmount) AS "Total Energy Credits Amount", -- Total energy credits for the state and year
-        SUM(NumOfEnergyTaxCredits) AS "Total Number of Energy Credits", -- Total number of energy credits
+        "State",
+        EXTRACT(YEAR FROM "DateOf") AS "Year",
+        SUM("NumOfEnergyTaxCredits" * "EnergyTaxCreditAmount") AS "Total Energy Credits Amount", -- Total energy credits for the state and year
+        SUM("NumOfEnergyTaxCredits") AS "Total Number of Energy Credits", -- Total number of energy credits
         CASE
-            WHEN SUM(NumReturns) > 0 THEN ROUND(SUM(NumOfEnergyTaxCredits) * 1.0 / SUM(NumReturns), 3) -- Uptake rate calculation
+            WHEN SUM("NumReturns") > 0 THEN ROUND((SUM("NumOfEnergyTaxCredits") * 1.0 / SUM("NumReturns"))::numeric, 3) -- Uptake rate calculation
             ELSE 0
         END AS "Uptake Rate", -- Percentage of returns with energy tax credits
         CASE
-            WHEN SUM(NumOfEnergyTaxCredits) > 0 THEN ROUND(SUM(NumOfEnergyTaxCredits * EnergyTaxCreditAmount) * 1.0 / SUM(NumOfEnergyTaxCredits), 3)
+            WHEN SUM("NumOfEnergyTaxCredits") > 0 THEN ROUND((SUM("NumOfEnergyTaxCredits" * "EnergyTaxCreditAmount") * 1.0 / SUM("NumOfEnergyTaxCredits"))::numeric, 3)
             ELSE 0
         END AS "Average Energy Credit Amount" -- Average credit amount per claim
         FROM 
-            "SAM.GROSSER".SOI_TAXSTATS
+            "SOI_TAXSTATS"
         WHERE 
-            dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
-                      AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
-            ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+            "DateOf" BETWEEN TO_DATE('01/01/' || $1, 'MM/DD/YYYY') 
+                      AND TO_DATE('01/01/' || $2, 'MM/DD/YYYY')
+                      ${statesArray.length > 0 ? `AND "State" IN (${statesArray.map((_, index) => `$${index + 3}`).join(", ")})` : ""}
         GROUP BY 
-            State, EXTRACT(YEAR FROM DateOf) -- Group by state and year
+            "State", EXTRACT(YEAR FROM "DateOf") -- Group by state and year
         ORDER BY 
-            State, EXTRACT(YEAR FROM DateOf)
+            "State", EXTRACT(YEAR FROM "DateOf")
           `;
     }
     else if (queryID == 3) { // Query 3: how does inflation impact purchasing power and take home pay over time?
         query = `
         WITH WeightedIncome AS (
         SELECT 
-            EXTRACT(YEAR FROM t.DateOf) AS Year,
-            t.State AS State,
-            t.AGI_stub AS IncomeBracket,
+            EXTRACT(YEAR FROM t."DateOf") AS Year,
+            t."State" AS State,
+            t."AGI_Stub" AS IncomeBracket,
             SUM(CASE 
-              WHEN t.AGI_stub = 1 THEN 12500
-              WHEN t.AGI_stub = 2 THEN 37500
-              WHEN t.AGI_stub = 3 THEN 62500
-              WHEN t.AGI_stub = 4 THEN 87500
-              WHEN t.AGI_stub = 5 THEN 150000
-              WHEN t.AGI_stub = 6 THEN 500000
-          END * t.NumReturns) AS TotalNominalIncome,
-            SUM(t.NumReturns) AS TotalReturns
+              WHEN t."AGI_Stub" = 1 THEN 12500
+              WHEN t."AGI_Stub" = 2 THEN 37500
+              WHEN t."AGI_Stub" = 3 THEN 62500
+              WHEN t."AGI_Stub" = 4 THEN 87500
+              WHEN t."AGI_Stub" = 5 THEN 150000
+              WHEN t."AGI_Stub" = 6 THEN 500000
+          END * t."NumReturns") AS TotalNominalIncome,
+            SUM(t."NumReturns") AS TotalReturns
         FROM 
-            "SAM.GROSSER".SOI_TaxStats t
+            "SOI_TAXSTATS" t
         WHERE 
-            dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
-                    AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
-            ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+            "DateOf" BETWEEN TO_DATE('01/01/' || $1, 'MM/DD/YYYY') 
+                    AND TO_DATE('01/01/' || $2, 'MM/DD/YYYY')
+                    ${statesArray.length > 0 ? `AND "State" IN (${statesArray.map((_, index) => `$${index + 3}`).join(", ")})` : ""}
         GROUP BY 
-            EXTRACT(YEAR FROM t.DateOf), t.State, t.AGI_stub
+            EXTRACT(YEAR FROM t."DateOf"), t."State", t."AGI_Stub"
         ),
         InflationAdjusted AS (
             SELECT 
@@ -96,130 +98,55 @@ export async function GET(request) {
                 w.State,
                 w.IncomeBracket,
                 w.TotalNominalIncome,
-                c.CPIAUCSL AS CPI,
-                (w.TotalNominalIncome / (c.CPIAUCSL / 214.56)) AS RealIncome
+                c."CPI" AS CPI,
+                (w.TotalNominalIncome / (c."CPI" / 214.56)) AS RealIncome
             FROM 
                 WeightedIncome w
             JOIN 
-                "SAM.GROSSER".ConsumerPriceIndex c 
-                ON w.Year = EXTRACT(YEAR FROM c.DateOf)
+                "ConsumerPriceIndex" c 
+                ON w.Year = EXTRACT(YEAR FROM c."DateOf")
         )
         SELECT 
             Year AS "Year",
             State AS "State",
             IncomeBracket AS "Income Bracket",
-            ROUND(TotalNominalIncome, 2) AS "Total Nominal Income", 
-            ROUND(RealIncome, 2) AS "Total Real Income",
-            ROUND(CPI, 2) AS "CPI"
+            ROUND(TotalNominalIncome::numeric, 2) AS "Total Nominal Income", 
+            ROUND(RealIncome::numeric, 2) AS "Total Real Income",
+            ROUND(CPI::numeric, 2) AS "CPI"
         FROM 
             InflationAdjusted
         ORDER BY 
             "Year", "State", "Income Bracket"
         `;
     }
-    // else if (queryID == 4) {  // Query 4: Fed funds rate impact sector wise income trends over time?
-    // query = `
-    // WITH IncomeDistribution AS (
-    //     SELECT
-    //         State,
-    //         EXTRACT(YEAR FROM DateOf) AS "Year",
-    //         CASE
-    //             WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-    //             WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-    //             WHEN AGI_stub IN (5, 6) THEN 'High Income'
-    //         END AS IncomeBracket,
-    //         SUM(NumReturns) AS NumPeople,
-    //         AGI_stub
-    //     FROM
-    //         "SAM.GROSSER".SOI_TAXSTATS
-    //     WHERE
-    //         dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY')
-    //                   AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
-    //         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-    //     GROUP BY
-    //         State, EXTRACT(YEAR FROM DateOf),
-    //         CASE
-    //             WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-    //             WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-    //             WHEN AGI_stub IN (5, 6) THEN 'High Income'
-    //         END,
-    //         AGI_stub
-    // )
-    // SELECT
-    //     "State",
-    //     "Year",
-    //     SUM(CASE WHEN IncomeBracket = 'Low Income' THEN NumPeople END) AS "Low Income",
-    //     SUM(CASE WHEN IncomeBracket = 'Middle Income' THEN NumPeople END) AS "Middle Income",
-    //     SUM(CASE WHEN IncomeBracket = 'High Income' THEN NumPeople END) AS "High Income"
-    // FROM
-    //     IncomeDistribution
-    // GROUP BY
-    //     "State", "Year"
-    // ORDER BY
-    //     "State", "Year"
-    // `;
-    // }
-    // else if (queryID == 5) {  // Query 5: How does income distribution across income brackets change over time in different states?
-    // query = `
-    // WITH IncomeBrackets AS (
-    //     SELECT
-    //         State,
-    //         EXTRACT(YEAR FROM DateOf) AS "Year",
-    //         CASE
-    //             WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-    //             WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-    //             WHEN AGI_stub IN (5, 6) THEN 'High Income'
-    //         END AS IncomeBracket,
-    //         AGI_stub,
-    //         NumReturns
-    //     FROM
-    //         "SAM.GROSSER".SOI_TAXSTATS
-    //     WHERE
-    //         dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY')
-    //                 AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
-    //         ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
-    // )
-    // SELECT
-    //     State AS "State",
-    //     "Year",
-    //     SUM(CASE WHEN IncomeBracket = 'Low Income' THEN NumReturns END) AS "Low Income",
-    //     SUM(CASE WHEN IncomeBracket = 'Middle Income' THEN NumReturns END) AS "Middle Income",
-    //     SUM(CASE WHEN IncomeBracket = 'High Income' THEN NumReturns END) AS "High Income"
-    // FROM
-    //     IncomeBrackets
-    // GROUP BY
-    //     State, "Year"
-    // ORDER BY
-    //     State, "Year"
-    // `;
-        // }
+    
     else if (queryID == 4) {  // Query 4: Income bracket trends
     query = `
     WITH IncomeDistribution AS (
     SELECT
-        State,
-        EXTRACT(YEAR FROM DateOf) AS Year,
-        SUM(NumReturns * CASE 
-            WHEN AGI_stub = 1 THEN 12500
-            WHEN AGI_stub = 2 THEN 37500
-            WHEN AGI_stub = 3 THEN 62500
-            WHEN AGI_stub = 4 THEN 87500
-            WHEN AGI_stub = 5 THEN 150000
-            WHEN AGI_stub = 6 THEN 500000
-        END) / SUM(NumReturns) AS AverageIncome
+        "State" as State,
+        EXTRACT(YEAR FROM "DateOf") AS Year,
+        SUM("NumReturns" * CASE 
+            WHEN "AGI_Stub" = 1 THEN 12500
+            WHEN "AGI_Stub" = 2 THEN 37500
+            WHEN "AGI_Stub" = 3 THEN 62500
+            WHEN "AGI_Stub" = 4 THEN 87500
+            WHEN "AGI_Stub" = 5 THEN 150000
+            WHEN "AGI_Stub" = 6 THEN 500000
+        END) / SUM("NumReturns") AS AverageIncome
     FROM
-        "SAM.GROSSER".SOI_TAXSTATS
+        "SOI_TAXSTATS"
     WHERE 
-        dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
-                  AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY')
-        ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+        "DateOf" BETWEEN TO_DATE('01/01/' || $1, 'MM/DD/YYYY') 
+                  AND TO_DATE('01/01/' || $2, 'MM/DD/YYYY')
+                  ${statesArray.length > 0 ? `AND "State" IN (${statesArray.map((_, index) => `$${index + 3}`).join(", ")})` : ""}
     GROUP BY
-        State, EXTRACT(YEAR FROM DateOf)
+        "State", EXTRACT(YEAR FROM "DateOf")
     )
     SELECT 
         State AS "State",
         Year AS "Year",
-        ROUND(AverageIncome, 2) AS "Average Income Bracket"
+        ROUND(AverageIncome::numeric, 2) AS "Average Income Bracket"
     FROM 
         IncomeDistribution
     ORDER BY 
@@ -230,61 +157,74 @@ export async function GET(request) {
     query = `
 
         SELECT
-        State AS "State",
-            EXTRACT(YEAR FROM DateOf) AS "Year",
+        "State",
+            EXTRACT(YEAR FROM "DateOf") AS "Year",
             CASE 
-                WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-                WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-                WHEN AGI_stub IN (5, 6) THEN 'High Income'
+                WHEN "AGI_Stub" IN (1, 2) THEN 'Low Income'
+                WHEN "AGI_Stub" IN (3, 4) THEN 'Middle Income'
+                WHEN "AGI_Stub" IN (5, 6) THEN 'High Income'
         END AS "Income Bracket",
-        SUM(NumReturns) AS "Number of People" -- Total number of people in each income group
+        ROUND(SUM("NumReturns")::numeric, 0) AS "Number of People" -- Total number of people in each income group
 
         FROM
-            "SAM.GROSSER".SOI_TAXSTATS
+            "SOI_TAXSTATS"
         WHERE 
-            dateof BETWEEN TO_DATE('01/01/' || :startYear, 'MM/DD/YYYY') 
-                    AND TO_DATE('01/01/' || :endYear, 'MM/DD/YYYY') 
-            ${statesArray.length > 0 ? `AND State IN (${placeholders})` : ""}
+            "DateOf" BETWEEN TO_DATE('01/01/' || $1, 'MM/DD/YYYY') 
+                    AND TO_DATE('01/01/' || $2, 'MM/DD/YYYY') 
+                    ${statesArray.length > 0 ? `AND "State" IN (${statesArray.map((_, index) => `$${index + 3}`).join(", ")})` : ""}
 
     GROUP BY
-            State, EXTRACT(YEAR FROM DateOf), 
+            "State", EXTRACT(YEAR FROM "DateOf"), 
             CASE 
-                WHEN AGI_stub IN (1, 2) THEN 'Low Income'
-                WHEN AGI_stub IN (3, 4) THEN 'Middle Income'
-                WHEN AGI_stub IN (5, 6) THEN 'High Income'
+                WHEN "AGI_Stub" IN (1, 2) THEN 'Low Income'
+                WHEN "AGI_Stub" IN (3, 4) THEN 'Middle Income'
+                WHEN "AGI_Stub" IN (5, 6) THEN 'High Income'
             END
     ORDER BY
-            State, "Year", "Income Bracket"
+            "State", "Year", "Income Bracket"
     `;
     }
     else if (queryID === 6) { // Fed Funds Rate query
         query = `
             SELECT 
-            EXTRACT(YEAR FROM DateOf) AS "Year",
-            FedFunds AS "FedFundsRate"
+                EXTRACT(YEAR FROM "DateOf") AS "Year",
+                "FFR" AS "FedFundsRate"
             FROM 
-            "SAM.GROSSER".FederalFunds
+                "FedFundsRate"
             WHERE 
-            EXTRACT(YEAR FROM DateOf) BETWEEN :startYear AND :endYear
+            EXTRACT(YEAR FROM "DateOf") BETWEEN $1 AND $2
             ORDER BY 
-            EXTRACT(YEAR FROM DateOf)
+            EXTRACT(YEAR FROM "DateOf")
         `;
     }
 
 
-    const bindParams = {
-      startYear: Number(startYear),
-      endYear: Number(endYear),
-      ...Object.fromEntries(statesArray.map((state, index) => [`state${index}`, state]))
-    };
-    
-    const result = await execute(connection, query, bindParams);
+    const bindParams = [
+      Number(startYear),
+      Number(endYear),
+      ...statesArray
+    ];
 
-    await connection.close();
+    //...Object.fromEntries(statesArray.map((state, index) => [`state${index}`, state]))
+    // const result = await execute(connection, query, bindParams);
 
-    return NextResponse.json(result.rows);
+    const result = await execute(query, bindParams);
+
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error executing query:', error);
     return NextResponse.json({ error: 'Database query failed' }, { status: 500 });
   }
+  /*
+  finally {
+    if (connection) { // Ensure connection is always closed
+      try {
+        await connection.close();
+      } catch (closeError) {
+        console.error('Error closing connection:', closeError);
+      }
+    }
+  }
+  */
 }

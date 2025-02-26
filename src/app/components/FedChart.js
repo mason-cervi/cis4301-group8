@@ -87,10 +87,11 @@ const AreaChartComponent = ({ data, fedFundsData }) => {
         <Tooltip 
           formatter={(value, name, props) => {
             // Custom tooltip formatter to handle different data types
+            const numericVal = Number(value);
             if (name === 'Federal Funds Rate') {
-              return [value.toFixed(2) + '%', name];
+              return [numericVal.toFixed(2) + '%', name];
             }
-            return [value.toFixed(2), name];
+            return [numericVal.toFixed(2), name];
           }}
         />
         <Legend />

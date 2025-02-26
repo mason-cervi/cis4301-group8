@@ -14,7 +14,7 @@ export default function EnergyPage() {
             <div className="flex items-center justify-center">
                 <p className="text-lg text-gray-700 max-w-2xl">
                 <br/>
-                This query digs into how your location—down to your state or ZIP code—affects the number of people claiming residential energy tax credits and how much they’re getting back. Essentially, it helps answer questions like:
+                This query digs into how the state you live in affects the number of people claiming residential energy tax credits and how much they’re getting back. Essentially, it helps answer questions like:
                 </p>
             </div>
 
